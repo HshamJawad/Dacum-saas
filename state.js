@@ -1,0 +1,62 @@
+// ============================================================
+// state.js — Central State Layer
+// ============================================================
+
+/**
+ * Single source of truth for all application data.
+ * Never mutate directly from outside — use StateManager methods
+ * or command factories in history.js.
+ */
+export const AppState = {
+    duties:      [],   // Array<{ id: string, title: string, tasks: Array<{id, text}> }>
+    taskCounts:  {},   // { dutyId: number } — monotonic counter per duty
+    dutyCount:   0,    // monotonic global duty counter
+    isCardView:  false
+};
+
+/**
+ * StateManager — wraps AppState and owns the undo/redo stacks.
+ * dispatch() is a convenience pipeline for execute → push → save → render.
+ * Render and save callbacks are injected by app.js to avoid circular deps.
+ */
+export const StateManager = {
+    state: AppState,
+    undoStack: [],
+    redoStack: [],
+    MAX_HISTORY: 50,
+
+    // ── Injected by app.js ──────────────────────────────────
+    _saveCallback:   null,
+    _renderCallback: null,
+
+    /** Wire up storage and renderer (called once in app.js) */
+    configure({ save, render }) {
+        this._saveCallback   = save;
+        this._renderCallback = render;
+    },
+
+    /** Read the current state object */
+    getState() { return this.state; },
+
+    /** Replace state wholesale (used by loadFromLocalStorage) */
+    setState(newState) { this.state = newState; },
+
+    /**
+     * Full pipeline: execute command, record it, clear redo, save, re-render.
+     * Callers that want fine-grained control use pushCommand() + render directly.
+     */
+    dispatch(command) {
+        command.execute();
+        this.undoStack.push(command);
+        if (this.undoStack.length > this.MAX_HISTORY) this.undoStack.shift();
+        this.redoStack = [];
+        if (this._saveCallback)   this._saveCallback();
+        if (this._renderCallback) this._renderCallback(this.state);
+    },
+
+    /** Export a plain snapshot of current state (for localStorage) */
+    serialize() { return JSON.parse(JSON.stringify(this.state)); },
+
+    /** Restore state from a deserialized snapshot */
+    deserialize(data) { Object.assign(this.state, data); }
+};
