@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DACUM Chart Generator</title>
+
+    <!-- ── External Libraries ───────────────────────────────── -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docx@7.8.2/build/index.js"></script>
+
+    <!-- ── Design System CSS ────────────────────────────────── -->
+    <link rel="stylesheet" href="./base.css">
+    <link rel="stylesheet" href="./layout.css">
+    <link rel="stylesheet" href="./components.css">
+
+    <!-- ── App Bootstrap (ES Module) ────────────────────────── -->
+    <script type="module" src="./app.js"></script>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     MAIN APP CONTAINER
+     ══════════════════════════════════════════════════════════ -->
+<div class="container">
+    <h1>📊 DACUM Chart Generator</h1>
+
+    <!-- Info Box ─────────────────────────────────────────── -->
+    <div class="info-box" id="infoBox">
+        <h3>
+            🎯 How to Use This Tool
+            <button class="btn-toggle-info" onclick="toggleInfoBox()">Hide</button>
+        </h3>
+        <div id="infoBoxContent">
+            <p><strong>1.</strong> Enter the occupation title and job title</p>
+            <p><strong>2.</strong> Add duties and tasks using the provided forms</p>
+            <p><strong>3.</strong> Add knowledge, skills, and behaviors (optional)</p>
+            <p><strong>4.</strong> Export as PDF or Word document</p>
+            <div class="example-section">
+                <p><strong>📝 Format for tasks:</strong> Action Verb + Task/Activity (What) + Context (Where/How/Why if relevant)</p>
+                <p><strong>💡 Example:</strong> "Calibrate testing equipment according to manufacturer specifications"</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Navigation ───────────────────────────────────── -->
+    <div class="tabs">
+        <div class="tab active" data-tab="info-tab">📋 Chart Info</div>
+        <div class="tab" data-tab="duties-tab">✅ Duties &amp; Tasks</div>
+        <div class="tab" data-tab="additional-info-tab">📚 Additional Info</div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         TAB 1 — CHART INFO
+         ══════════════════════════════════════════════════════ -->
+    <div class="tab-content active" id="info-tab">
+        <h2>DACUM Research Chart Information</h2>
+
+        <div class="mb-20">
+            <div class="mb-10">
+                <label for="dacumDate">📅 DACUM Date:</label>
+                <input type="date" id="dacumDate">
+            </div>
+
+            <div class="mb-10">
+                <label for="producedFor">🏢 Produced For:</label>
+                <input type="text" id="producedFor" placeholder="e.g., Company/Organization Name">
+                <div class="image-upload-container">
+                    <div class="image-preview" id="producedForImagePreview">
+                        <span class="image-preview-placeholder">No image</span>
+                    </div>
+                    <div>
+                        <button class="btn-add-image" onclick="document.getElementById('producedForImageInput').click()">
+                            🖼️ Add Logo
+                        </button>
+                        <button class="btn-remove-image" id="removeProducedForImage" onclick="removeImage('producedFor')" style="display:none;">
+                            🗑️ Remove
+                        </button>
+                        <input type="file" id="producedForImageInput" accept=".jpg,.jpeg,.png,.bmp" class="hidden" onchange="handleImageUpload(event, 'producedFor')">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-10">
+                <label for="producedBy">🎓 Produced By:</label>
+                <input type="text" id="producedBy" placeholder="e.g., Training Institution Name">
+                <div class="image-upload-container">
+                    <div class="image-preview" id="producedByImagePreview">
+                        <span class="image-preview-placeholder">No image</span>
+                    </div>
+                    <div>
+                        <button class="btn-add-image" onclick="document.getElementById('producedByImageInput').click()">
+                            🖼️ Add Logo
+                        </button>
+                        <button class="btn-remove-image" id="removeProducedByImage" onclick="removeImage('producedBy')" style="display:none;">
+                            🗑️ Remove
+                        </button>
+                        <input type="file" id="producedByImageInput" accept=".jpg,.jpeg,.png,.bmp" class="hidden" onchange="handleImageUpload(event, 'producedBy')">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-10">
+                <label for="occupationTitle">💼 Occupation Title:</label>
+                <input type="text" id="occupationTitle" placeholder="e.g., Automotive Technician">
+            </div>
+
+            <div class="mb-10">
+                <label for="jobTitle">👔 Job Title:</label>
+                <input type="text" id="jobTitle" placeholder="e.g., Service Technician Level 2">
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         TAB 2 — DUTIES & TASKS
+         ══════════════════════════════════════════════════════ -->
+    <div class="tab-content" id="duties-tab">
+        <div class="duties-tab-header">
+            <h2>Duties and Tasks</h2>
+            <button id="toggleViewBtn" onclick="toggleCardView()">🃏 Switch to Card View</button>
+        </div>
+        <div id="dutiesContainer"></div>
+        <button class="btn-add" onclick="addDuty()">➕ Add Duty</button>
+    </div>
+
+    <!-- CARD VIEW (hidden by default) ──────────────────────── -->
+    <div id="cardViewContainer">
+        <div class="card-view-header">
+            <h2>🃏 Card View — Duties &amp; Tasks</h2>
+            <button id="toggleViewBtnCard" onclick="toggleCardView()">📋 Switch to Table View</button>
+        </div>
+        <div id="cardViewInner" class="cv-duties-grid"></div>
+        <div class="card-view-footer">
+            <button class="cv-add-duty" onclick="cvAddDuty()">➕ Add Duty</button>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         TAB 3 — ADDITIONAL INFO
+         ══════════════════════════════════════════════════════ -->
+    <div class="tab-content" id="additional-info-tab">
+        <h2>Additional Information</h2>
+        <p class="additional-info-intro">📝 Enter information for each section. Click the rename button to customize section headings.</p>
+
+        <!-- Knowledge -->
+        <div class="section-container">
+            <div class="section-header-editable">
+                <h3 id="knowledgeHeading" contenteditable="false">Knowledge Requirements</h3>
+                <div class="section-header-actions">
+                    <button class="btn-rename" onclick="toggleEditHeading('knowledgeHeading')">✏️ Rename</button>
+                    <button class="btn-clear-section" onclick="clearSection('knowledgeInput','knowledgeHeading','Knowledge Requirements')">🗑️ Clear</button>
+                </div>
+            </div>
+            <textarea id="knowledgeInput" placeholder="Enter each knowledge requirement on a new line&#10;Example:&#10;• Understanding of electrical systems&#10;• Knowledge of safety protocols&#10;• Familiarity with diagnostic tools"></textarea>
+        </div>
+
+        <!-- Skills -->
+        <div class="section-container">
+            <div class="section-header-editable">
+                <h3 id="skillsHeading" contenteditable="false">Skills Requirements</h3>
+                <div class="section-header-actions">
+                    <button class="btn-rename" onclick="toggleEditHeading('skillsHeading')">✏️ Rename</button>
+                    <button class="btn-clear-section" onclick="clearSection('skillsInput','skillsHeading','Skills Requirements')">🗑️ Clear</button>
+                </div>
+            </div>
+            <textarea id="skillsInput" placeholder="Enter each skill requirement on a new line&#10;Example:&#10;• Ability to read technical diagrams&#10;• Proficiency in using hand tools&#10;• Strong problem-solving skills"></textarea>
+        </div>
+
+        <!-- Behaviors -->
+        <div class="section-container">
+            <div class="section-header-editable">
+                <h3 id="behaviorsHeading" contenteditable="false">Worker Behaviors/Traits</h3>
+                <div class="section-header-actions">
+                    <button class="btn-rename" onclick="toggleEditHeading('behaviorsHeading')">✏️ Rename</button>
+                    <button class="btn-clear-section" onclick="clearSection('behaviorsInput','behaviorsHeading','Worker Behaviors/Traits')">🗑️ Clear</button>
+                </div>
+            </div>
+            <textarea id="behaviorsInput" placeholder="Enter each behavior or trait on a new line&#10;Example:&#10;• Attention to detail&#10;• Good communication skills&#10;• Team player&#10;• Safety conscious"></textarea>
+        </div>
+
+        <!-- Tools -->
+        <div class="section-container">
+            <div class="section-header-editable">
+                <h3 id="toolsHeading" contenteditable="false">Tools, Equipment, Supplies and Materials</h3>
+                <div class="section-header-actions">
+                    <button class="btn-rename" onclick="toggleEditHeading('toolsHeading')">✏️ Rename</button>
+                    <button class="btn-clear-section" onclick="clearSection('toolsInput','toolsHeading','Tools, Equipment, Supplies and Materials')">🗑️ Clear</button>
+                </div>
+            </div>
+            <textarea id="toolsInput" placeholder="Enter each tool/equipment on a new line&#10;Example:&#10;• Digital multimeter&#10;• Pneumatic impact wrench&#10;• Safety glasses&#10;• Hydraulic lift"></textarea>
+        </div>
+
+        <!-- Trends -->
+        <div class="section-container">
+            <div class="section-header-editable">
+                <h3 id="trendsHeading" contenteditable="false">Future Trends and Concerns</h3>
+                <div class="section-header-actions">
+                    <button class="btn-rename" onclick="toggleEditHeading('trendsHeading')">✏️ Rename</button>
+                    <button class="btn-clear-section" onclick="clearSection('trendsInput','trendsHeading','Future Trends and Concerns')">🗑️ Clear</button>
+                </div>
+            </div>
+            <textarea id="trendsInput" placeholder="Enter each trend/concern on a new line&#10;Example:&#10;• Increased use of electric vehicles&#10;• Advanced driver assistance systems&#10;• Sustainability requirements&#10;• Automation in manufacturing"></textarea>
+        </div>
+
+        <!-- Acronyms -->
+        <div class="section-container">
+            <div class="section-header-editable">
+                <h3 id="acronymsHeading" contenteditable="false">Acronyms</h3>
+                <div class="section-header-actions">
+                    <button class="btn-rename" onclick="toggleEditHeading('acronymsHeading')">✏️ Rename</button>
+                    <button class="btn-clear-section" onclick="clearSection('acronymsInput','acronymsHeading','Acronyms')">🗑️ Clear</button>
+                </div>
+            </div>
+            <textarea id="acronymsInput" placeholder="Enter acronyms and their definitions on separate lines&#10;Example:&#10;• OBD - On-Board Diagnostics&#10;• ECU - Engine Control Unit&#10;• TPMS - Tire Pressure Monitoring System&#10;• ABS - Anti-lock Braking System"></textarea>
+        </div>
+
+        <!-- Career Path -->
+        <div class="section-container">
+            <div class="section-header-editable">
+                <h3 id="careerPathHeading" contenteditable="false">Career Path</h3>
+                <div class="section-header-actions">
+                    <button class="btn-rename" onclick="toggleEditHeading('careerPathHeading')">✏️ Rename</button>
+                    <button class="btn-clear-section" onclick="clearSection('careerPathInput','careerPathHeading','Career Path')">🗑️ Clear</button>
+                </div>
+            </div>
+            <textarea id="careerPathInput" placeholder="Enter career progression information on separate lines&#10;Example:&#10;• Entry Level: Technician Apprentice&#10;• Mid Level: Certified Technician&#10;• Advanced: Senior Technician / Specialist&#10;• Management: Shop Foreman / Service Manager"></textarea>
+        </div>
+
+        <!-- Custom Sections Container -->
+        <div id="customSectionsContainer"></div>
+
+        <!-- Add Section Button -->
+        <div class="add-section-footer">
+            <button class="btn-add btn-add-section-main" onclick="addCustomSection()">➕ Add Section</button>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         BOTTOM ACTION BAR
+         ══════════════════════════════════════════════════════ -->
+    <div class="button-container">
+        <button class="btn-snapshot"    onclick="promptSnapshot()">📸 Snapshot</button>
+        <button class="btn-save-data"   onclick="saveToJSON()">💾 Save to JSON</button>
+        <button class="btn-load-data"   onclick="document.getElementById('loadFileInput').click()">📁 Load from JSON</button>
+        <button class="btn-export"      onclick="exportToPDF()">📄 Export as PDF</button>
+        <button class="btn-export-word" onclick="exportToWord()">📝 Export as Word (DOCX)</button>
+        <button class="btn-clear-all"   onclick="clearAll()">🗑️ Clear All</button>
+    </div>
+
+    <input type="file" id="loadFileInput" accept=".json" class="hidden" onchange="loadFromJSON(event)">
+
+    <div id="status" class="status" style="display:none;"></div>
+
+    <!-- Copyright ────────────────────────────────────────── -->
+    <div class="copyright">
+        <p class="copyright-main">© 2025 DACUM Chart Generator | by Husham Jawad Kadhim | Version 2.0 | All Rights Reserved</p>
+        <p class="copyright-disclaimer">
+            <strong>Disclaimer:</strong> This tool is provided "as is" without warranty of any kind. The developer assumes no
+            responsibility for any inaccuracies, errors, omissions, or inconsistencies in the generated documents.
+            Users are solely responsible for verifying and validating all content before use.
+        </p>
+    </div>
+</div><!-- /.container -->
+
+<!-- ══════════════════════════════════════════════════════════
+     FLOATING CONTROL PANEL
+     ══════════════════════════════════════════════════════════ -->
+<div id="floatingPanel">
+    <button id="floatUndoBtn" onclick="undo()"            disabled title="Undo (Ctrl+Z)">↩ Undo</button>
+    <button id="floatRedoBtn" onclick="redo()"            disabled title="Redo (Ctrl+Y)">↪ Redo</button>
+    <div class="fp-divider"></div>
+    <button id="floatSnapBtn" onclick="promptSnapshot()"  title="Save snapshot">📸</button>
+    <button id="debugBtn"     onclick="toggleSnapshotPanel()" title="Snapshots / Debug">🔍</button>
+</div>
+
+<div id="snapshotPanel">
+    <h4>📸 Saved Snapshots</h4>
+    <div id="snapshotList"></div>
+</div>
+
+</body>
+</html>
