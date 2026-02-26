@@ -1,36 +1,49 @@
 // ============================================================
-// storage.js — LocalStorage Persistence Layer
+// storage.js — Persistence Delegation Layer
+//
+// The actual save/load logic now lives in project-manager.js.
+// This module provides the same saveToLocalStorage /
+// loadFromLocalStorage interface that history.js, events.js
+// and renderer.js already call, so none of those files need
+// any changes.
+//
+// app.js calls setSaveHook() once at startup to wire in the
+// function that syncs AppState → active project → localStorage.
 // ============================================================
-import { AppState, StateManager } from './state.js';
 
-const STORAGE_KEY = 'dacumAppState';
+// ── Save hook (injected by app.js) ────────────────────────────
+let _saveHook = null;
 
 /**
- * Persist the current AppState to localStorage.
- * Called after every state-mutating operation.
+ * Register the save callback.
+ * Called once during bootstrap in app.js.
+ * The hook is responsible for:
+ *   1. Calling updateActiveProjectData({ state, snapshots })
+ *   2. Calling persistProjects()
+ */
+export function setSaveHook(fn) {
+    _saveHook = fn;
+}
+
+/**
+ * Trigger a full project persist.
+ * Called by: pushCommand, undo, redo, clearDuty, clearAll,
+ *            saveToJSON (indirectly), loadFromJSON, EventBinder tab init.
+ * All callers are unchanged — they still call this function.
  */
 export function saveToLocalStorage() {
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(AppState));
+        if (_saveHook) _saveHook();
     } catch (e) {
-        console.warn('LocalStorage save failed:', e);
+        console.warn('[Storage] Save failed:', e);
     }
 }
 
 /**
- * Restore AppState from localStorage on startup.
- * Returns true if data was found and applied, false otherwise.
+ * Stub kept for backward compatibility.
+ * Loading is now handled by ProjectManager.loadProjects() in app.js.
+ * Returns false so any caller falls through to their own defaults.
  */
 export function loadFromLocalStorage() {
-    try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-            const parsed = JSON.parse(saved);
-            Object.assign(AppState, parsed);
-            return true;
-        }
-    } catch (e) {
-        console.warn('LocalStorage load failed:', e);
-    }
     return false;
 }

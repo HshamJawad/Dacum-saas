@@ -20,6 +20,54 @@
 <body>
 
 <!-- ══════════════════════════════════════════════════════════
+     SIDEBAR — Project Management Panel
+     ══════════════════════════════════════════════════════════ -->
+<div id="sidebar">
+
+    <!-- Header: title + new project button -->
+    <div class="sb-header">
+        <div class="sb-header-title">
+            <span>📁</span>
+            <span>Projects</span>
+        </div>
+        <button class="sb-new-btn" onclick="pmNewProject()" title="Create new project">
+            + New
+        </button>
+    </div>
+
+    <!-- Search -->
+    <div class="sb-search">
+        <input type="text"
+               id="projectSearchInput"
+               placeholder="🔍  Search projects…"
+               oninput="pmFilterProjects(this.value)"
+               autocomplete="off">
+    </div>
+
+    <!-- Project list (populated by renderSidebar in app.js) -->
+    <div class="sb-project-list" id="sidebarProjectList">
+        <!-- dynamic -->
+    </div>
+
+    <!-- Footer -->
+    <div class="sb-footer">
+        <span id="sbProjectCount">0 projects</span>
+    </div>
+
+</div><!-- /#sidebar -->
+
+<!-- Sidebar collapse/expand tab (fixed to sidebar right edge) -->
+<button id="sidebarToggleBtn" onclick="pmToggleSidebar()" title="Toggle sidebar">
+    <span id="sidebarToggleIcon">◀</span>
+</button>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     APP WRAPPER — shifts right when sidebar is open
+     ══════════════════════════════════════════════════════════ -->
+<div id="appWrapper">
+
+<!-- ══════════════════════════════════════════════════════════
      MAIN APP CONTAINER
      ══════════════════════════════════════════════════════════ -->
 <div class="container">
@@ -263,14 +311,16 @@
     </div>
 </div><!-- /.container -->
 
+</div><!-- /#appWrapper -->
+
 <!-- ══════════════════════════════════════════════════════════
-     FLOATING CONTROL PANEL
+     FLOATING CONTROL PANEL  (position:fixed — outside flow)
      ══════════════════════════════════════════════════════════ -->
 <div id="floatingPanel">
     <button id="floatUndoBtn" onclick="undo()"            disabled title="Undo (Ctrl+Z)">↩ Undo</button>
     <button id="floatRedoBtn" onclick="redo()"            disabled title="Redo (Ctrl+Y)">↪ Redo</button>
     <div class="fp-divider"></div>
-    <button id="floatSnapBtn" onclick="promptSnapshot()"  title="Save snapshot">📸</button>
+    <button id="floatSnapBtn" onclick="promptSnapshot()"      title="Save snapshot">📸</button>
     <button id="debugBtn"     onclick="toggleSnapshotPanel()" title="Snapshots / Debug">🔍</button>
 </div>
 

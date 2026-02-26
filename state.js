@@ -6,6 +6,10 @@
  * Single source of truth for all application data.
  * Never mutate directly from outside — use StateManager methods
  * or command factories in history.js.
+ *
+ * With multi-project support, app.js syncs this object FROM
+ * the active project on startup and project switch, and syncs
+ * it back TO the project record via the save hook in storage.js.
  */
 export const AppState = {
     duties:      [],   // Array<{ id: string, title: string, tasks: Array<{id, text}> }>
@@ -38,7 +42,7 @@ export const StateManager = {
     /** Read the current state object */
     getState() { return this.state; },
 
-    /** Replace state wholesale (used by loadFromLocalStorage) */
+    /** Replace state wholesale (used by applyProjectState) */
     setState(newState) { this.state = newState; },
 
     /**
@@ -60,3 +64,35 @@ export const StateManager = {
     /** Restore state from a deserialized snapshot */
     deserialize(data) { Object.assign(this.state, data); }
 };
+
+// ══════════════════════════════════════════════════════════════
+//  PROJECT SYNC HELPERS
+//  Called by app.js when switching active projects.
+//  All command factory closures reference AppState by reference,
+//  so mutating AppState in-place keeps them correct.
+// ══════════════════════════════════════════════════════════════
+
+/**
+ * Load a stored project state record into the live AppState object.
+ * Mutates AppState in-place so all existing closures stay valid.
+ */
+export function applyProjectState(projectState) {
+    if (!projectState) return;
+    AppState.duties      = JSON.parse(JSON.stringify(projectState.duties      || []));
+    AppState.taskCounts  = JSON.parse(JSON.stringify(projectState.taskCounts  || {}));
+    AppState.dutyCount   = typeof projectState.dutyCount === 'number' ? projectState.dutyCount : 0;
+    AppState.isCardView  = false; // always open projects in table view for clean UX
+}
+
+/**
+ * Extract a serialisable snapshot of AppState for project storage.
+ * Returns a new object — safe to pass to JSON.stringify.
+ */
+export function extractProjectState() {
+    return JSON.parse(JSON.stringify({
+        duties:     AppState.duties,
+        taskCounts: AppState.taskCounts,
+        dutyCount:  AppState.dutyCount,
+        isCardView: AppState.isCardView
+    }));
+}
