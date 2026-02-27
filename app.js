@@ -86,6 +86,57 @@ initFileEngine({
 let _sidebarOpen   = true;
 let _sidebarFilter = '';
 
+// ── View mode preference ───────────────────────────────────────
+// Key stored in localStorage independently of project state so
+// the preference persists across project switches and reloads.
+const PREF_VIEW_KEY = 'preferredView';
+
+/**
+ * Read the user's stored view preference.
+ * Falls back to 'card' (default) if nothing has been saved yet.
+ * @returns {'card'|'table'}
+ */
+function _getPreferredView() {
+    const stored = localStorage.getItem(PREF_VIEW_KEY);
+    return (stored === 'table') ? 'table' : 'card';
+}
+
+/**
+ * Apply a view mode to the DOM without triggering a render.
+ * Called during project load / project switch so the preferred
+ * view is restored before the single renderAll in step 6.
+ *
+ * This is intentionally separate from toggleCardView() in
+ * events.js, which handles user interaction + renders + saves.
+ *
+ * @param {'card'|'table'} mode
+ */
+function _applyViewMode(mode) {
+    const isCard        = (mode === 'card');
+    const cardContainer = document.getElementById('cardViewContainer');
+    const tabs          = document.querySelector('.tabs');
+    const tabContents   = document.querySelectorAll('.tab-content');
+
+    AppState.isCardView = isCard;
+
+    if (isCard) {
+        // Hide tab strip and all tab panels; show card container
+        if (tabs) tabs.style.display = 'none';
+        tabContents.forEach(tc => { tc.style.display = 'none'; });
+        if (cardContainer) cardContainer.style.display = 'block';
+    } else {
+        // Restore tab strip; clear inline style so CSS .active class controls visibility
+        if (cardContainer) cardContainer.style.display = 'none';
+        if (tabs) tabs.style.display = '';
+        tabContents.forEach(tc => { tc.style.display = ''; });
+        // Re-show active tab if duties-tab happens to be the active one
+        const dutiesTab = document.getElementById('duties-tab');
+        if (dutiesTab && dutiesTab.classList.contains('active')) {
+            dutiesTab.style.display = 'block';
+        }
+    }
+}
+
 /** Format a date as a human-readable relative string */
 function _relDate(isoString) {
     const diff = Date.now() - new Date(isoString).getTime();
@@ -130,7 +181,7 @@ function _loadProjectIntoUI(proj) {
     StateManager.undoStack = [];
     StateManager.redoStack = [];
 
-    // 5. Reset UI chrome: card view → table view, reactivate Chart Info tab
+    // 5. Reset tab state: deactivate all, activate Chart Info tab
     const cardContainer = document.getElementById('cardViewContainer');
     const tabs          = document.querySelector('.tabs');
     const tabContents   = document.querySelectorAll('.tab-content');
@@ -142,6 +193,10 @@ function _loadProjectIntoUI(proj) {
     const infoTabEl  = document.getElementById('info-tab');
     if (infoTabBtn) infoTabBtn.classList.add('active');
     if (infoTabEl)  infoTabEl.classList.add('active');
+
+    // 5b. Override with the user's global view preference (card is the default).
+    //     _applyViewMode does NOT render — step 6 handles the single renderAll.
+    _applyViewMode(_getPreferredView());
 
     // 6. Re-render everything
     updateHistoryButtons();

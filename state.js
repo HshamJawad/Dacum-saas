@@ -15,7 +15,7 @@ export const AppState = {
     duties:      [],   // Array<{ id: string, title: string, tasks: Array<{id, text}> }>
     taskCounts:  {},   // { dutyId: number } — monotonic counter per duty
     dutyCount:   0,    // monotonic global duty counter
-    isCardView:  false
+    isCardView:  true  // default to card view; overridden by user preference in app.js
 };
 
 /**

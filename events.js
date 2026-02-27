@@ -99,6 +99,11 @@ export function toggleCardView() {
             dutiesTab.style.display = 'block';
         }
     }
+
+    // Persist the user's preference so it survives page reloads and
+    // project switches. Read back by _getPreferredView() in app.js.
+    localStorage.setItem('preferredView', AppState.isCardView ? 'card' : 'table');
+
     Renderer.renderAll(StateManager.state);
 }
 
