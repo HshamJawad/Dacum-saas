@@ -221,10 +221,16 @@ export function restoreSnapshot(index) {
     const snap = SnapshotManager.snapshots[index];
     if (!snap) return;
     const prior = deepClone(AppState);
+    // Preserve the current view mode — restoring data must not
+    // force a view switch the user didn't ask for (Issue 2 fix).
+    const currentIsCardView = AppState.isCardView;
     const cmd = {
         type: 'RESTORE_SNAPSHOT',
         payload: { label: snap.label },
-        execute() { Object.assign(AppState, deepClone(snap.state)); },
+        execute() {
+            Object.assign(AppState, deepClone(snap.state));
+            AppState.isCardView = currentIsCardView;  // keep live view
+        },
         undo()    { Object.assign(AppState, prior); }
     };
     cmd.execute();

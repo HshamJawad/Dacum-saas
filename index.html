@@ -229,24 +229,31 @@
          TAB 2 — DUTIES & TASKS
          ══════════════════════════════════════════════════════ -->
     <div class="tab-content" id="duties-tab">
-        <div class="duties-tab-header">
-            <h2>Duties and Tasks</h2>
-            <button id="toggleViewBtn" class="btn btn-primary" onclick="toggleCardView()">🃏 Card View</button>
-        </div>
-        <div id="dutiesContainer"></div>
-        <button class="btn-add" onclick="addDuty()">➕ Add Duty</button>
-    </div>
 
-    <!-- CARD VIEW (hidden by default) ──────────────────────── -->
-    <div id="cardViewContainer">
-        <div class="card-view-header">
-            <h2>🃏 Card View — Duties &amp; Tasks</h2>
-            <button id="toggleViewBtnCard" class="btn btn-secondary" onclick="toggleCardView()">📋 Table View</button>
+        <!-- TABLE VIEW (default) ──────────────────────────── -->
+        <div id="tableViewArea">
+            <div class="duties-tab-header">
+                <h2>Duties and Tasks</h2>
+                <button id="toggleViewBtn" type="button" class="btn btn-primary" onclick="toggleCardView()">🃏 Card View</button>
+            </div>
+            <div id="dutiesContainer"></div>
+            <button id="addDutyBtn" type="button" class="btn-add" onclick="addDuty()">➕ Add Duty</button>
         </div>
-        <div id="cardViewInner" class="cv-duties-grid"></div>
-        <div class="card-view-footer">
-            <button class="cv-add-duty" onclick="cvAddDuty()">➕ Add Duty</button>
+
+        <!-- CARD VIEW (hidden until toggled) ──────────────── -->
+        <!-- Lives inside duties-tab so the tab strip is never
+             touched when switching views.                     -->
+        <div id="cardViewContainer" style="display:none;">
+            <div class="card-view-header">
+                <h2>🃏 Card View — Duties &amp; Tasks</h2>
+                <button id="toggleViewBtnCard" type="button" class="btn btn-secondary" onclick="toggleCardView()">📋 Table View</button>
+            </div>
+            <div id="cardViewInner" class="cv-duties-grid"></div>
+            <div class="card-view-footer">
+                <button type="button" class="cv-add-duty" onclick="cvAddDuty()">➕ Add Duty</button>
+            </div>
         </div>
+
     </div>
 
     <!-- ══════════════════════════════════════════════════════

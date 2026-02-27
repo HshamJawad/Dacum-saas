@@ -23,7 +23,8 @@ import {
     saveToJSON, loadFromJSON,
     exportToWord, exportToPDF,
     exportProjectFile, importProjectFile,
-    getActiveTabId, setActiveTabId, restoreActiveTab   // ← Phase 1
+    getActiveTabId, setActiveTabId, restoreActiveTab,   // tab stability
+    _applyCardViewDOM                                    // view-sync helper
 } from './events.js';
 import {
     createProject, deleteProject, renameProject,
@@ -33,7 +34,12 @@ import {
 } from './project-manager.js';
 
 // ── Wire cross-module render reference ────────────────────────
-setHistoryRender(state => Renderer.renderAll(state));
+// Extended to sync card/table DOM visibility so that undo, redo,
+// and snapshot restore all land in the correct visual state.
+setHistoryRender(state => {
+    _applyCardViewDOM(state.isCardView);   // sync containers first
+    Renderer.renderAll(state);             // then paint content
+});
 
 // ── Wire action callbacks into Renderer ───────────────────────
 setRendererActions({ addDuty, removeDuty, addTask, removeTask, clearDuty });
@@ -105,33 +111,16 @@ function _getPreferredView() {
 /**
  * Apply a view mode to the DOM without triggering a render.
  * Called during project load / project switch so the preferred
- * view is restored before the single renderAll in step 6.
+ * view is set before the single renderAll in step 6.
  *
- * This is intentionally separate from toggleCardView() in
- * events.js, which handles user interaction + renders + saves.
+ * Only touches #cardViewContainer / #tableViewArea — the .tabs
+ * bar and sibling .tab-content panels are never manipulated.
  *
  * @param {'card'|'table'} mode
  */
 function _applyViewMode(mode) {
-    const isCard        = (mode === 'card');
-    const cardContainer = document.getElementById('cardViewContainer');
-    const tabs          = document.querySelector('.tabs');
-    const tabContents   = document.querySelectorAll('.tab-content');
-
-    AppState.isCardView = isCard;
-
-    if (isCard) {
-        // Hide tab strip and all tab panels; show card container
-        if (tabs) tabs.style.display = 'none';
-        tabContents.forEach(tc => { tc.style.display = 'none'; });
-        if (cardContainer) cardContainer.style.display = 'block';
-    } else {
-        // Restore tab strip; use restoreActiveTab to correctly reactivate
-        // whichever tab was tracked — avoids the old "only duties-tab" special-case
-        if (cardContainer) cardContainer.style.display = 'none';
-        if (tabs) tabs.style.display = '';
-        restoreActiveTab();                              // ← Phase 1 fix
-    }
+    AppState.isCardView = (mode === 'card');
+    _applyCardViewDOM(AppState.isCardView);
 }
 
 /** Format a date as a human-readable relative string */
@@ -178,22 +167,12 @@ function _loadProjectIntoUI(proj) {
     StateManager.undoStack = [];
     StateManager.redoStack = [];
 
-    // 5. Reset tab state: deactivate all, activate Chart Info tab
-    const cardContainer = document.getElementById('cardViewContainer');
-    const tabs          = document.querySelector('.tabs');
-    const tabContents   = document.querySelectorAll('.tab-content');
-    if (cardContainer) cardContainer.style.display = 'none';
-    if (tabs)          tabs.style.display          = '';
-    tabContents.forEach(tc => { tc.style.display = ''; tc.classList.remove('active'); });
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    const infoTabBtn = document.querySelector('[data-tab="info-tab"]');
-    const infoTabEl  = document.getElementById('info-tab');
-    if (infoTabBtn) infoTabBtn.classList.add('active');
-    if (infoTabEl)  infoTabEl.classList.add('active');
-    setActiveTabId('info-tab');                          // ← Phase 1: keep tracker in sync
+    // 5. Reset tab state → Chart Info, table view
+    //    Use the tracked helpers so every code path stays consistent.
+    setActiveTabId('info-tab');
+    restoreActiveTab();
 
-    // 5b. Override with the user's global view preference (card is the default).
-    //     _applyViewMode does NOT render — step 6 handles the single renderAll.
+    // 5b. Apply the user's stored view preference (no render yet — step 6 does it).
     _applyViewMode(_getPreferredView());
 
     // 6. Re-render everything
@@ -304,13 +283,16 @@ export function renderSidebar(filterText) {
             nameEl.contentEditable = 'false';
             nameEl.classList.remove('sb-name-editing');
             const newName = nameEl.textContent.trim();
-            if (newName && newName !== proj.name) {
+            if (!newName) {
+                // Empty — fall back to existing name or "Untitled Project"
+                nameEl.textContent = proj.name || 'Untitled Project';
+                return;
+            }
+            if (newName !== proj.name) {
                 renameProject(proj.id, newName);
                 persistProjects();
-                proj.name = newName;      // keep local ref current
+                proj.name = newName;
                 nameEl.title = newName;
-            } else {
-                nameEl.textContent = proj.name;   // revert if blank
             }
         });
 

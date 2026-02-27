@@ -110,30 +110,35 @@ export function clearDuty(dutyId) {
 export function cvAddDuty() { addDuty(); }
 
 // ── Card / Table view toggle ──────────────────────────────────
+// Only shows/hides #cardViewContainer vs #tableViewArea.
+// The .tabs bar and sibling .tab-content panels are NEVER touched.
 export function toggleCardView() {
-    const cardContainer = document.getElementById('cardViewContainer');
-    const tabContents   = document.querySelectorAll('.tab-content');
-    const tabs          = document.querySelector('.tabs');
-
     AppState.isCardView = !AppState.isCardView;
-
-    if (AppState.isCardView) {
-        // Hide tabs; card container takes over full screen
-        tabContents.forEach(tc => { tc.style.display = 'none'; });
-        tabs.style.display = 'none';
-        cardContainer.style.display = 'block';
-    } else {
-        // Return to tab view — restore whichever tab was active
-        cardContainer.style.display = 'none';
-        tabs.style.display = '';
-        restoreActiveTab();          // ← Phase 1 fix: reactivate tracked tab
-    }
-
-    // Persist the user's preference so it survives page reloads and
-    // project switches. Read back by _getPreferredView() in app.js.
+    _applyCardViewDOM(AppState.isCardView);
     localStorage.setItem('preferredView', AppState.isCardView ? 'card' : 'table');
+    // Render only the now-visible view, not both
+    if (AppState.isCardView) {
+        Renderer.renderCardView(StateManager.state);
+    } else {
+        Renderer.renderTableView(StateManager.state);
+    }
+}
 
-    Renderer.renderAll(StateManager.state);
+/**
+ * Sync card/table DOM visibility without triggering a render.
+ * Called by toggleCardView and by app.js _syncViewDOM.
+ * Exported so app.js can import and reuse the same logic.
+ */
+export function _applyCardViewDOM(isCardView) {
+    const cardContainer  = document.getElementById('cardViewContainer');
+    const tableViewArea  = document.getElementById('tableViewArea');
+    if (isCardView) {
+        if (tableViewArea)  tableViewArea.style.display  = 'none';
+        if (cardContainer)  cardContainer.style.display  = 'block';
+    } else {
+        if (cardContainer)  cardContainer.style.display  = 'none';
+        if (tableViewArea)  tableViewArea.style.display  = '';
+    }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -158,12 +163,11 @@ export function clearAll() {
     cmd.execute();
     pushCommand(cmd);
 
-    // Switch back from card view if active
+    // Reset to table view if card view was active — use the same
+    // inner-container toggle so the .tabs bar is never touched.
     if (AppState.isCardView) {
         AppState.isCardView = false;
-        document.getElementById('cardViewContainer').style.display = 'none';
-        document.querySelector('.tabs').style.display = '';
-        document.querySelectorAll('.tab-content').forEach(tc => { tc.style.display = ''; });
+        _applyCardViewDOM(false);
     }
 
     // Reset Additional Info headings
