@@ -30,7 +30,7 @@
             <span>📁</span>
             <span>Projects</span>
         </div>
-        <button class="sb-new-btn" onclick="pmNewProject()" title="Create new project">
+        <button class="sb-new-btn" type="button" onclick="pmNewProject()" title="Create new project">
             + New
         </button>
     </div>
@@ -57,7 +57,7 @@
 </div><!-- /#sidebar -->
 
 <!-- Sidebar collapse/expand tab (fixed to sidebar right edge) -->
-<button id="sidebarToggleBtn" onclick="pmToggleSidebar()" title="Toggle sidebar">
+<button id="sidebarToggleBtn" type="button" onclick="pmToggleSidebar()" title="Toggle sidebar">
     <span id="sidebarToggleIcon">◀</span>
 </button>
 
@@ -80,6 +80,7 @@
         <div class="top-toolbar-group">
             <button id="btnSnapshot"
                     class="tb-btn tb-btn--sky"
+                    type="button"
                     onclick="promptSnapshot()"
                     title="Save a named snapshot of the current state">
                 📸 Snapshot
@@ -91,12 +92,14 @@
         <div class="top-toolbar-group">
             <button id="btnExportProject"
                     class="tb-btn tb-btn--teal"
+                    type="button"
                     onclick="exportProjectFile()"
                     title="Export the active project as a versioned JSON file">
                 📤 Export Project
             </button>
             <button id="btnImportProject"
                     class="tb-btn tb-btn--amber"
+                    type="button"
                     onclick="document.getElementById('importProjectInput').click()"
                     title="Import a previously exported project JSON file">
                 📥 Import Project
@@ -108,12 +111,14 @@
         <div class="top-toolbar-group">
             <button id="btnExportPDF"
                     class="tb-btn tb-btn--blue"
+                    type="button"
                     onclick="exportToPDF()"
                     title="Export the DACUM chart as a PDF document">
                 📄 Export PDF
             </button>
             <button id="btnExportWord"
                     class="tb-btn tb-btn--purple"
+                    type="button"
                     onclick="exportToWord()"
                     title="Export the DACUM chart as a Word (DOCX) document">
                 📝 Export Word
@@ -125,6 +130,7 @@
         <div class="top-toolbar-group">
             <button id="btnClearAll"
                     class="tb-btn tb-btn--danger"
+                    type="button"
                     onclick="clearAll()"
                     title="Clear all data from the current chart">
                 🗑️ Clear All
@@ -365,11 +371,10 @@
      FLOATING CONTROL PANEL  (position:fixed — outside flow)
      ══════════════════════════════════════════════════════════ -->
 <div id="floatingPanel">
-    <button id="floatUndoBtn" onclick="undo()"            disabled title="Undo (Ctrl+Z)">↩ Undo</button>
-    <button id="floatRedoBtn" onclick="redo()"            disabled title="Redo (Ctrl+Y)">↪ Redo</button>
+    <button id="floatUndoBtn" type="button" onclick="undo()" disabled title="Undo (Ctrl+Z)">↩ Undo</button>
+    <button id="floatRedoBtn" type="button" onclick="redo()" disabled title="Redo (Ctrl+Y)">↪ Redo</button>
     <div class="fp-divider"></div>
-    <button id="floatSnapBtn" onclick="promptSnapshot()"      title="Save snapshot">📸</button>
-    <button id="debugBtn"     onclick="toggleSnapshotPanel()" title="Snapshots / Debug">🔍</button>
+    <button id="debugBtn"     type="button" onclick="toggleSnapshotPanel()" title="Snapshots / Debug">🔍</button>
 </div>
 
 <div id="snapshotPanel">

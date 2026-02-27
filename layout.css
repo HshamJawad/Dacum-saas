@@ -127,12 +127,17 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 6px;
-  background: var(--surface-light);
+  background: var(--surface-white);
   border: 1px solid var(--surface-border);
   border-radius: var(--radius-md);
   padding: 10px 16px;
   margin-bottom: 24px;
   box-shadow: var(--shadow-card);
+
+  /* Phase 4 — sticky: stays visible on scroll within the page */
+  position: sticky;
+  top: 0;
+  z-index: 200;
 }
 
 .top-toolbar-group {
@@ -213,6 +218,24 @@
   }
 }
 
+
+/* ── Phase 3: Inline-editable project name in sidebar ─────── */
+.sb-card-name {
+  outline: none;
+  border-radius: 4px;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.sb-name-editing {
+  background: rgba(255,255,255,0.9);
+  box-shadow: 0 0 0 2px var(--color-accent);
+  padding: 1px 4px;
+  cursor: text;
+}
+
+.sb-name-editing:focus {
+  outline: none;
+}
 
 .copyright {
   text-align: center;

@@ -22,7 +22,8 @@ import {
     addCustomSection, removeCustomSection,
     saveToJSON, loadFromJSON,
     exportToWord, exportToPDF,
-    exportProjectFile, importProjectFile
+    exportProjectFile, importProjectFile,
+    getActiveTabId, setActiveTabId, restoreActiveTab   // ← Phase 1
 } from './events.js';
 import {
     createProject, deleteProject, renameProject,
@@ -125,15 +126,11 @@ function _applyViewMode(mode) {
         tabContents.forEach(tc => { tc.style.display = 'none'; });
         if (cardContainer) cardContainer.style.display = 'block';
     } else {
-        // Restore tab strip; clear inline style so CSS .active class controls visibility
+        // Restore tab strip; use restoreActiveTab to correctly reactivate
+        // whichever tab was tracked — avoids the old "only duties-tab" special-case
         if (cardContainer) cardContainer.style.display = 'none';
         if (tabs) tabs.style.display = '';
-        tabContents.forEach(tc => { tc.style.display = ''; });
-        // Re-show active tab if duties-tab happens to be the active one
-        const dutiesTab = document.getElementById('duties-tab');
-        if (dutiesTab && dutiesTab.classList.contains('active')) {
-            dutiesTab.style.display = 'block';
-        }
+        restoreActiveTab();                              // ← Phase 1 fix
     }
 }
 
@@ -193,6 +190,7 @@ function _loadProjectIntoUI(proj) {
     const infoTabEl  = document.getElementById('info-tab');
     if (infoTabBtn) infoTabBtn.classList.add('active');
     if (infoTabEl)  infoTabEl.classList.add('active');
+    setActiveTabId('info-tab');                          // ← Phase 1: keep tracker in sync
 
     // 5b. Override with the user's global view preference (card is the default).
     //     _applyViewMode does NOT render — step 6 handles the single renderAll.
@@ -281,21 +279,85 @@ export function renderSidebar(filterText) {
         card.className   = 'sb-project-card' + (isActive ? ' sb-active' : '');
         card.dataset.pid = proj.id;
 
-        card.innerHTML = `
-            <div class="sb-card-body">
-                <div class="sb-card-name" title="${escapeHtml(proj.name)}">${escapeHtml(proj.name)}</div>
-                <div class="sb-card-meta">
-                    <span class="sb-meta-item">🕐 ${dateStr}</span>
-                    <span class="sb-meta-item">📋 ${dutyCount} ${dutyCount === 1 ? 'duty' : 'duties'}</span>
-                </div>
-            </div>
-            <div class="sb-card-actions">
-                <button class="sb-delete-btn" title="Delete project"
-                        onclick="event.stopPropagation(); pmDeleteProject('${proj.id}')">×</button>
-            </div>`;
+        // ── Phase 3: inline-editable project name ────────────
+        // Double-click activates editing; single click (on card-body)
+        // still switches the active project via the listener below.
+        const nameEl = document.createElement('div');
+        nameEl.className = 'sb-card-name';
+        nameEl.textContent = proj.name;
+        nameEl.title = proj.name;
+        nameEl.contentEditable = 'false';
 
-        // Switch on card-body click (not delete button)
-        card.querySelector('.sb-card-body').addEventListener('click', () => _switchToProject(proj.id));
+        nameEl.addEventListener('dblclick', (e) => {
+            e.stopPropagation();   // prevent card-body switch on dblclick
+            nameEl.contentEditable = 'true';
+            nameEl.classList.add('sb-name-editing');
+            nameEl.focus();
+            const range = document.createRange();
+            range.selectNodeContents(nameEl);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+        });
+
+        nameEl.addEventListener('blur', () => {
+            nameEl.contentEditable = 'false';
+            nameEl.classList.remove('sb-name-editing');
+            const newName = nameEl.textContent.trim();
+            if (newName && newName !== proj.name) {
+                renameProject(proj.id, newName);
+                persistProjects();
+                proj.name = newName;      // keep local ref current
+                nameEl.title = newName;
+            } else {
+                nameEl.textContent = proj.name;   // revert if blank
+            }
+        });
+
+        nameEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter')  { e.preventDefault(); nameEl.blur(); }
+            if (e.key === 'Escape') { nameEl.textContent = proj.name; nameEl.blur(); }
+        });
+
+        // Prevent a single click on the name from switching projects
+        // while editing is active (mousedown fires before blur on click)
+        nameEl.addEventListener('mousedown', (e) => {
+            if (nameEl.contentEditable === 'true') e.stopPropagation();
+        });
+
+        const metaEl = document.createElement('div');
+        metaEl.className = 'sb-card-meta';
+        metaEl.innerHTML =
+            `<span class="sb-meta-item">🕐 ${dateStr}</span>` +
+            `<span class="sb-meta-item">📋 ${dutyCount} ${dutyCount === 1 ? 'duty' : 'duties'}</span>`;
+
+        const cardBody = document.createElement('div');
+        cardBody.className = 'sb-card-body';
+        cardBody.appendChild(nameEl);
+        cardBody.appendChild(metaEl);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'sb-delete-btn';
+        deleteBtn.title = 'Delete project';
+        deleteBtn.textContent = '×';
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            window.pmDeleteProject(proj.id);
+        });
+
+        const cardActions = document.createElement('div');
+        cardActions.className = 'sb-card-actions';
+        cardActions.appendChild(deleteBtn);
+
+        card.appendChild(cardBody);
+        card.appendChild(cardActions);
+
+        // Switch on card-body click (not delete button, not name when editing)
+        cardBody.addEventListener('click', () => {
+            if (nameEl.contentEditable === 'true') return;  // ignore click while editing
+            _switchToProject(proj.id);
+        });
         list.appendChild(card);
     });
 }

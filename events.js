@@ -20,6 +20,37 @@ export let producedByImage  = null;
 export function setProducedForImage(v) { producedForImage = v; }
 export function setProducedByImage(v)  { producedByImage  = v; }
 
+// ── Active tab tracking (Phase 1 — Tab Stability) ─────────────
+// Single source of truth for which tab is currently active.
+// Updated on every tab click; used by restoreActiveTab() to
+// rebuild correct DOM state after any re-render or view toggle.
+let _activeTabId = 'info-tab';
+
+export function getActiveTabId()    { return _activeTabId; }
+export function setActiveTabId(id)  { _activeTabId = id; }
+
+/**
+ * Restore the correct tab to "active" state in the DOM.
+ * Safe to call any time the app is in table/tab view.
+ * Does nothing when card view is active (tabs are hidden then).
+ */
+export function restoreActiveTab() {
+    // Do not interfere while card view owns the screen
+    const cardContainer = document.getElementById('cardViewContainer');
+    if (cardContainer && cardContainer.style.display === 'block') return;
+
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => {
+        c.classList.remove('active');
+        c.style.display = '';          // let CSS .active rule control visibility
+    });
+
+    const tabBtn = document.querySelector(`[data-tab="${_activeTabId}"]`);
+    const tabEl  = document.getElementById(_activeTabId);
+    if (tabBtn) tabBtn.classList.add('active');
+    if (tabEl)  tabEl.classList.add('active');
+}
+
 // ── Custom section counter ────────────────────────────────────
 let customSectionCounter = 0;
 
@@ -87,17 +118,15 @@ export function toggleCardView() {
     AppState.isCardView = !AppState.isCardView;
 
     if (AppState.isCardView) {
+        // Hide tabs; card container takes over full screen
         tabContents.forEach(tc => { tc.style.display = 'none'; });
         tabs.style.display = 'none';
         cardContainer.style.display = 'block';
     } else {
+        // Return to tab view — restore whichever tab was active
         cardContainer.style.display = 'none';
         tabs.style.display = '';
-        tabContents.forEach(tc => { tc.style.display = ''; });
-        const dutiesTab = document.getElementById('duties-tab');
-        if (dutiesTab && dutiesTab.classList.contains('active')) {
-            dutiesTab.style.display = 'block';
-        }
+        restoreActiveTab();          // ← Phase 1 fix: reactivate tracked tab
     }
 
     // Persist the user's preference so it survives page reloads and
@@ -165,6 +194,7 @@ export function clearAll() {
     customSectionCounter = 0;
 
     // Switch to Chart Info tab
+    _activeTabId = 'info-tab';                         // ← Phase 1 fix
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     document.querySelector('[data-tab="info-tab"]').classList.add('active');
@@ -543,20 +573,13 @@ export async function exportToWord() {
             children.push(new Paragraph({ spacing: { after: 200 } }));
         }
 
-        // Duties and tasks
+        // Duties and tasks — read from central AppState (works in any view)
         children.push(new Paragraph({ children: [new PageBreak(), new TextRun({ text: 'Duties and Tasks', bold: true, size: 28 })], alignment: AlignmentType.CENTER, spacing: { after: 300 }, bidirectional: false }));
 
-        const dutyInputs = document.querySelectorAll('[data-duty-id]');
-        const duties = [];
-        dutyInputs.forEach(di => {
-            const text = di.value.trim();
-            if (text) {
-                const id = di.getAttribute('data-duty-id');
-                const tasks = [];
-                document.querySelectorAll(`[data-task-id^="${id}_"]`).forEach(ti => { const t = ti.value.trim(); if (t) tasks.push(t); });
-                duties.push({ duty: text, tasks });
-            }
-        });
+        const duties = AppState.duties.map(d => ({
+            duty:  d.title,
+            tasks: d.tasks.map(t => t.text).filter(t => t.trim() !== '')
+        }));
 
         duties.forEach((dutyData, dutyIndex) => {
             const letter = String.fromCharCode(65 + dutyIndex);
@@ -706,19 +729,12 @@ export function exportToPDF() {
         pdf.text('Job:', rightColX, rightY); pdf.setFont(undefined, 'normal'); pdf.setFontSize(14);
         pdf.text(occupationTitleInput.value, rightColX + 15, rightY);
 
-        // DACUM chart grid
+        // DACUM chart grid — read from central AppState (works in any view)
         pdf.addPage('a4', 'landscape'); yPos = margin + 5;
-        const dutyInputs = document.querySelectorAll('[data-duty-id]');
-        const duties = [];
-        dutyInputs.forEach(di => {
-            const text = di.value.trim();
-            if (text) {
-                const id = di.getAttribute('data-duty-id');
-                const tasks = [];
-                document.querySelectorAll(`[data-task-id^="${id}_"]`).forEach(ti => { const t = ti.value.trim(); if (t) tasks.push(t); });
-                duties.push({ duty: text, tasks });
-            }
-        });
+        const duties = AppState.duties.map(d => ({
+            duty:  d.title,
+            tasks: d.tasks.map(t => t.text).filter(t => t.trim() !== '')
+        }));
         if (duties.length === 0) { showStatus('Please add at least one duty with tasks', 'error'); return; }
 
         pdf.setFillColor(200,200,200);
@@ -910,6 +926,7 @@ export const EventBinder = {
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', function() {
                 const tabId = this.getAttribute('data-tab');
+                _activeTabId = tabId;                          // ← Phase 1 fix: track active tab
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                 this.classList.add('active');
