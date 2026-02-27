@@ -73,6 +73,65 @@
 <div class="container">
     <h1>📊 DACUM Chart Generator</h1>
 
+    <!-- ══════════════════════════════════════════════════════
+         TOP TOOLBAR
+         ══════════════════════════════════════════════════════ -->
+    <div class="top-toolbar">
+        <div class="top-toolbar-group">
+            <button id="btnSnapshot"
+                    class="tb-btn tb-btn--sky"
+                    onclick="promptSnapshot()"
+                    title="Save a named snapshot of the current state">
+                📸 Snapshot
+            </button>
+        </div>
+
+        <div class="top-toolbar-divider"></div>
+
+        <div class="top-toolbar-group">
+            <button id="btnExportProject"
+                    class="tb-btn tb-btn--teal"
+                    onclick="exportProjectFile()"
+                    title="Export the active project as a versioned JSON file">
+                📤 Export Project
+            </button>
+            <button id="btnImportProject"
+                    class="tb-btn tb-btn--amber"
+                    onclick="document.getElementById('importProjectInput').click()"
+                    title="Import a previously exported project JSON file">
+                📥 Import Project
+            </button>
+        </div>
+
+        <div class="top-toolbar-divider"></div>
+
+        <div class="top-toolbar-group">
+            <button id="btnExportPDF"
+                    class="tb-btn tb-btn--blue"
+                    onclick="exportToPDF()"
+                    title="Export the DACUM chart as a PDF document">
+                📄 Export PDF
+            </button>
+            <button id="btnExportWord"
+                    class="tb-btn tb-btn--purple"
+                    onclick="exportToWord()"
+                    title="Export the DACUM chart as a Word (DOCX) document">
+                📝 Export Word
+            </button>
+        </div>
+
+        <div class="top-toolbar-divider"></div>
+
+        <div class="top-toolbar-group">
+            <button id="btnClearAll"
+                    class="tb-btn tb-btn--danger"
+                    onclick="clearAll()"
+                    title="Clear all data from the current chart">
+                🗑️ Clear All
+            </button>
+        </div>
+    </div>
+
     <!-- Info Box ─────────────────────────────────────────── -->
     <div class="info-box" id="infoBox">
         <h3>
@@ -284,21 +343,7 @@
         </div>
     </div>
 
-    <!-- ══════════════════════════════════════════════════════
-         BOTTOM ACTION BAR
-         ══════════════════════════════════════════════════════ -->
-    <div class="button-container">
-        <button class="btn-snapshot"        onclick="promptSnapshot()">📸 Snapshot</button>
-        <button class="btn-save-data"       onclick="saveToJSON()">💾 Save to JSON</button>
-        <button class="btn-load-data"       onclick="document.getElementById('loadFileInput').click()">📁 Load from JSON</button>
-        <button class="btn-export"          onclick="exportToPDF()">📄 Export as PDF</button>
-        <button class="btn-export-word"     onclick="exportToWord()">📝 Export as Word (DOCX)</button>
-        <button class="btn-export-project"  onclick="exportProjectFile()">📤 Export Project</button>
-        <button class="btn-import-project"  onclick="document.getElementById('importProjectInput').click()">📥 Import Project</button>
-        <button class="btn-clear-all"       onclick="clearAll()">🗑️ Clear All</button>
-    </div>
-
-    <input type="file" id="loadFileInput"      accept=".json" class="hidden" onchange="loadFromJSON(event)">
+    <!-- Hidden file inputs for project import ───────────── -->
     <input type="file" id="importProjectInput" accept=".json" class="hidden" onchange="importProjectFile(event)">
 
     <div id="status" class="status" style="display:none;"></div>
