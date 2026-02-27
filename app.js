@@ -202,9 +202,6 @@ function _loadProjectIntoUI(proj) {
     updateHistoryButtons();
     Renderer.renderAll(StateManager.state);
     refreshSnapshotList();
-
-    // Reflect project name in the top-bar
-    _updateTopBarProjectName(getActiveProject()?.name);
 }
 
 // ── Project switching (public, exposed to window) ─────────────
@@ -243,24 +240,6 @@ function _setSidebarState(open) {
         body.classList.add('sb-sidebar-closed');
         if (toggleIcon) toggleIcon.textContent = '▶';
     }
-}
-
-// ══════════════════════════════════════════════════════════════
-//  TOP-BAR HELPERS
-// ══════════════════════════════════════════════════════════════
-
-/**
- * Reflect the active project's name in the top-bar.
- * Called after every project switch, creation, rename, and on init.
- * Safe to call before DOMContentLoaded — querySelector returns null
- * and the function exits cleanly.
- *
- * @param {string|null} name — project name, or null to show placeholder
- */
-function _updateTopBarProjectName(name) {
-    const el = document.getElementById('currentProjectName');
-    if (!el) return;
-    el.textContent = name || 'Untitled Project';
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -345,28 +324,7 @@ window.addEventListener('DOMContentLoaded', () => {
     renderSidebar();
     _setSidebarState(true);
 
-    // ── 5a. Wire top-bar buttons ───────────────────────────────
-    //
-    // Save  → saveToLocalStorage (pure localStorage, no download)
-    //         + visual confirmation via showStatus
-    // Export → fileEngine exportProject (versioned .json download)
-    // Import → trigger the hidden file input, fileEngine handles
-    //           parsing and onImportSuccess callback
-    //
-    document.getElementById('saveProjectBtn')?.addEventListener('click', () => {
-        saveToLocalStorage();
-        showStatus('Project saved ✓', 'success');
-    });
-
-    document.getElementById('exportProjectBtn')?.addEventListener('click', () => {
-        window.exportProjectFile();
-    });
-
-    document.getElementById('importProjectBtn')?.addEventListener('click', () => {
-        document.getElementById('importProjectInput')?.click();
-    });
-
-    // ── 5b. Expose all functions to window ─────────────────────
+    // ── 5. Expose all functions to window ──────────────────────
     //       Inline onclick="..." attributes in the HTML need globals.
     Object.assign(window, {
         // ── Duty / Task ──────────────────────────────────────────
@@ -442,10 +400,6 @@ window.addEventListener('DOMContentLoaded', () => {
             renameProject(id, newName.trim());
             persistProjects();
             renderSidebar();
-            // Update top-bar if renaming the active project
-            if (getActiveProject()?.id === id) {
-                _updateTopBarProjectName(newName.trim());
-            }
         },
 
         pmToggleSidebar:  ()     => _setSidebarState(!_sidebarOpen),

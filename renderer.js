@@ -56,14 +56,14 @@ export const Renderer = {
             actions.className = 'duty-header-actions';
             actions.appendChild(
                 createButton({
-                    type: 'ghost',
+                    type: 'clear-section',
                     label: '🗑️ Clear',
                     onClick: () => _actions.clearDuty && _actions.clearDuty(duty.id)
                 })
             );
             actions.appendChild(
                 createButton({
-                    type: 'danger',
+                    type: 'remove',
                     label: '🗑️ Remove Duty',
                     onClick: () => _actions.removeDuty && _actions.removeDuty(duty.id)
                 })
@@ -106,7 +106,7 @@ export const Renderer = {
             // Add Task button
             dutyDiv.appendChild(
                 createButton({
-                    type: 'primary',
+                    type: 'add',
                     label: '➕ Add Task',
                     onClick: () => _actions.addTask && _actions.addTask(duty.id)
                 })
@@ -148,7 +148,7 @@ export const Renderer = {
             })(duty, task);
 
             const removeBtn = createButton({
-                type: 'danger',
+                type: 'remove',
                 label: '🗑️',
                 onClick: () => _actions.removeTask && _actions.removeTask(task.id)
             });
@@ -264,9 +264,9 @@ export const Renderer = {
                 });
             }
 
-            // Add Task button (card view)
+            // Add Task button
             const addTaskBtn = document.createElement('button');
-            addTaskBtn.className = 'btn btn-primary cv-add-task';
+            addTaskBtn.className = 'cv-add-task';
             addTaskBtn.innerHTML = '➕ Task';
             addTaskBtn.title = 'Add task to this duty';
             addTaskBtn.addEventListener('click', () => _actions.addTask && _actions.addTask(duty.id));

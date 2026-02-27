@@ -12,7 +12,7 @@ import {
 import { saveToLocalStorage, loadFromLocalStorage } from './storage.js';
 import { Renderer } from './renderer.js';
 import { showStatus } from './design-system.js';
-import { exportProject, importProject } from '../fileEngine.js';
+import { exportProject, importProject } from './fileEngine.js';
 
 // ── Image state (module-level) ────────────────────────────────
 export let producedForImage = null;
@@ -227,13 +227,13 @@ export function removeImage(imageType) {
 
 export function toggleInfoBox() {
     const content = document.getElementById('infoBoxContent');
-    const btn     = document.getElementById('infoBoxToggleBtn');
+    const btn     = document.querySelector('.btn-toggle-info');
     if (content.style.display === 'none') {
         content.style.display = 'block';
-        if (btn) btn.textContent = 'Hide';
+        btn.textContent = 'Hide';
     } else {
         content.style.display = 'none';
-        if (btn) btn.textContent = 'Show';
+        btn.textContent = 'Show';
     }
 }
 
@@ -282,9 +282,9 @@ export function addCustomSection() {
         <div class="section-header-editable">
             <h3 id="${headingId}" contenteditable="false">Custom Section ${customSectionCounter}</h3>
             <div class="section-header-actions">
-                <button class="btn btn-ghost" onclick="window.toggleEditHeading('${headingId}')">✏️ Rename</button>
-                <button class="btn btn-ghost" onclick="window.clearSection('${inputId}', '${headingId}', 'Custom Section ${customSectionCounter}')">🗑️ Clear</button>
-                <button class="btn btn-danger" onclick="window.removeCustomSection('${sectionId}')">❌ Remove</button>
+                <button class="btn-rename" onclick="window.toggleEditHeading('${headingId}')">✏️ Rename</button>
+                <button class="btn-clear-section" onclick="window.clearSection('${inputId}', '${headingId}', 'Custom Section ${customSectionCounter}')">🗑️ Clear</button>
+                <button class="btn-remove-section" onclick="window.removeCustomSection('${sectionId}')">❌ Remove</button>
             </div>
         </div>
         <textarea id="${inputId}" placeholder="Enter information for this custom section on separate lines"></textarea>
