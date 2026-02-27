@@ -181,3 +181,23 @@ export function updateActiveProjectData({ state, snapshots } = {}) {
     if (snapshots !== undefined) proj.snapshots = _clone(snapshots);
     proj.updatedAt = _now();
 }
+
+/**
+ * Insert a fully-formed ProjectRecord directly into the store.
+ * Used by fileEngine.js after import schema validation and ID
+ * de-duplication — the record is import-ready at call time.
+ *
+ * Does NOT change activeProjectId — caller (app.js via
+ * onImportSuccess callback) handles the context switch.
+ *
+ * @param {Object} record — a complete, validated ProjectRecord
+ * @returns {boolean} true on success, false if record is invalid
+ */
+export function injectProject(record) {
+    if (!record || !record.id || typeof record.id !== 'string') {
+        console.warn('[PM] injectProject: invalid record — must have a string id');
+        return false;
+    }
+    _store.projects[record.id] = record;
+    return true;
+}

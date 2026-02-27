@@ -995,3 +995,42 @@ body.sb-sidebar-closed #appWrapper {
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
+
+/* ── File Engine buttons ────────────────────────────────────────
+   Export Project: teal — signals "outbound project data"
+   Import Project: indigo — signals "inbound project data"
+   Both follow the exact same shape/rhythm as existing buttons. */
+
+.btn-export-project {
+  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm, 8px);
+  padding: 10px 16px;
+  font-size: 0.95em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.15s;
+  box-shadow: 0 2px 8px rgba(13,148,136,0.25);
+}
+.btn-export-project:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(13,148,136,0.4);
+}
+
+.btn-import-project {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm, 8px);
+  padding: 10px 16px;
+  font-size: 0.95em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.15s;
+  box-shadow: 0 2px 8px rgba(99,102,241,0.25);
+}
+.btn-import-project:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(99,102,241,0.4);
+}

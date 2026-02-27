@@ -11,6 +11,7 @@ import {
     SnapshotManager, refreshSnapshotList, escapeHtml
 } from './history.js';
 import { saveToLocalStorage, setSaveHook }   from './storage.js';
+import { initFileEngine }                    from './fileEngine.js';
 import { Renderer, setRendererActions }      from './renderer.js';
 import {
     EventBinder,
@@ -20,13 +21,14 @@ import {
     toggleInfoBox, toggleEditHeading, clearSection,
     addCustomSection, removeCustomSection,
     saveToJSON, loadFromJSON,
-    exportToWord, exportToPDF
+    exportToWord, exportToPDF,
+    exportProjectFile, importProjectFile
 } from './events.js';
 import {
     createProject, deleteProject, renameProject,
     setActiveProject, getActiveProject, getAllProjects,
     persistProjects, loadProjects,
-    updateActiveProjectData
+    updateActiveProjectData, injectProject
 } from './project-manager.js';
 
 // ── Wire cross-module render reference ────────────────────────
@@ -50,6 +52,31 @@ setSaveHook(() => {
         snapshots: JSON.parse(JSON.stringify(SnapshotManager.snapshots))
     });
     persistProjects();
+});
+
+// ── Wire file engine ───────────────────────────────────────────
+// initFileEngine is called at module level (not inside
+// DOMContentLoaded) because _switchToProject and renderSidebar
+// are function declarations and are therefore hoisted — they are
+// safely referenceable here before DOMContentLoaded fires.
+initFileEngine({
+    // Look up one project record by id
+    getProject:      (id) => getAllProjects().find(p => p.id === id),
+
+    // Return all project records
+    getAllProjects:   getAllProjects,
+
+    // Insert a fully-formed record into the project store
+    injectProject:   injectProject,
+
+    // Flush in-memory store to localStorage
+    persistProjects: persistProjects,
+
+    // After a successful import: switch context + refresh sidebar
+    onImportSuccess: (project) => {
+        _switchToProject(project.id);
+        showStatus('Project "' + escapeHtml(project.name) + '" imported ✓', 'success');
+    },
 });
 
 // ══════════════════════════════════════════════════════════════
@@ -273,6 +300,12 @@ window.addEventListener('DOMContentLoaded', () => {
 
         // ── Export ───────────────────────────────────────────────
         exportToWord, exportToPDF,
+
+        // ── File Engine: Project Export / Import ─────────────────
+        // exportProjectFile receives the active project id so the
+        // user never has to pick which project to export.
+        exportProjectFile: () => exportProjectFile(getActiveProject()?.id),
+        importProjectFile,
 
         // ── Project Manager ──────────────────────────────────────
         pmSwitchProject: (id) => _switchToProject(id),

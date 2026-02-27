@@ -12,6 +12,7 @@ import {
 import { saveToLocalStorage, loadFromLocalStorage } from './storage.js';
 import { Renderer } from './renderer.js';
 import { showStatus } from './design-system.js';
+import { exportProject, importProject } from './fileEngine.js';
 
 // ── Image state (module-level) ────────────────────────────────
 export let producedForImage = null;
@@ -859,6 +860,39 @@ export function exportToPDF() {
         console.error('Error generating PDF:', err);
         showStatus('Error generating PDF: ' + err.message, 'error');
     }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  FILE ENGINE — PROJECT EXPORT / IMPORT
+//  Thin wrappers that call fileEngine.js, keeping all engine
+//  logic in one place while exposing clean public functions that
+//  can be bound to window.* in app.js.
+// ══════════════════════════════════════════════════════════════
+
+/**
+ * Export the currently active project as a versioned .json file.
+ * The projectId argument is supplied by app.js when it binds
+ * this function to window.exportProjectFile.
+ *
+ * @param {string} projectId — id of the project to export
+ */
+export function exportProjectFile(projectId) {
+    exportProject(projectId);
+}
+
+/**
+ * Handle the <input type="file"> change event for project import.
+ * Passes the selected File to the fileEngine and resets the input
+ * so the same file can be re-imported if needed.
+ *
+ * @param {Event} event — native change event from the file input
+ */
+export function importProjectFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    importProject(file);
+    // Reset the input so the same file path can trigger onchange again
+    event.target.value = '';
 }
 
 // ══════════════════════════════════════════════════════════════

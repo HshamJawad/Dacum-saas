@@ -288,15 +288,18 @@
          BOTTOM ACTION BAR
          ══════════════════════════════════════════════════════ -->
     <div class="button-container">
-        <button class="btn-snapshot"    onclick="promptSnapshot()">📸 Snapshot</button>
-        <button class="btn-save-data"   onclick="saveToJSON()">💾 Save to JSON</button>
-        <button class="btn-load-data"   onclick="document.getElementById('loadFileInput').click()">📁 Load from JSON</button>
-        <button class="btn-export"      onclick="exportToPDF()">📄 Export as PDF</button>
-        <button class="btn-export-word" onclick="exportToWord()">📝 Export as Word (DOCX)</button>
-        <button class="btn-clear-all"   onclick="clearAll()">🗑️ Clear All</button>
+        <button class="btn-snapshot"        onclick="promptSnapshot()">📸 Snapshot</button>
+        <button class="btn-save-data"       onclick="saveToJSON()">💾 Save to JSON</button>
+        <button class="btn-load-data"       onclick="document.getElementById('loadFileInput').click()">📁 Load from JSON</button>
+        <button class="btn-export"          onclick="exportToPDF()">📄 Export as PDF</button>
+        <button class="btn-export-word"     onclick="exportToWord()">📝 Export as Word (DOCX)</button>
+        <button class="btn-export-project"  onclick="exportProjectFile()">📤 Export Project</button>
+        <button class="btn-import-project"  onclick="document.getElementById('importProjectInput').click()">📥 Import Project</button>
+        <button class="btn-clear-all"       onclick="clearAll()">🗑️ Clear All</button>
     </div>
 
-    <input type="file" id="loadFileInput" accept=".json" class="hidden" onchange="loadFromJSON(event)">
+    <input type="file" id="loadFileInput"      accept=".json" class="hidden" onchange="loadFromJSON(event)">
+    <input type="file" id="importProjectInput" accept=".json" class="hidden" onchange="importProjectFile(event)">
 
     <div id="status" class="status" style="display:none;"></div>
 
