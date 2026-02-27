@@ -23,7 +23,7 @@ import {
     saveToJSON, loadFromJSON,
     exportToWord, exportToPDF,
     exportProjectFile, importProjectFile
-} from './js/events.js';
+} from './events.js';
 import {
     createProject, deleteProject, renameProject,
     setActiveProject, getActiveProject, getAllProjects,
