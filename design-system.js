@@ -20,11 +20,21 @@ export function showStatus(message, type) {
 // ── Reusable Button Builder ───────────────────────────────────
 /**
  * createButton({ type, label, onClick, title, id, disabled })
- * type maps to a CSS class: 'add', 'remove', 'export', etc.
+ *
+ * type maps to a design-system modifier:
+ *   'primary'   → btn btn-primary   (add, save, create)
+ *   'secondary' → btn btn-secondary (export, load, snapshot)
+ *   'danger'    → btn btn-danger    (remove, delete, clear)
+ *   'ghost'     → btn btn-ghost     (rename, clear-section, toggles)
+ *
+ * Renderer.js uses:
+ *   'primary'  → Add Task button
+ *   'danger'   → Remove Duty / Remove Task
+ *   'ghost'    → Clear Duty
  */
 export function createButton({ type = '', label = '', onClick = null, title = '', id = '', disabled = false } = {}) {
     const btn = document.createElement('button');
-    if (type)     btn.className = `btn-${type}`;
+    if (type)     btn.className = `btn btn-${type}`;
     if (id)       btn.id = id;
     if (title)    btn.title = title;
     if (disabled) btn.disabled = true;

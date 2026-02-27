@@ -2,6 +2,80 @@
    LAYOUT.CSS — Containers, Grid, Flex Layouts
    ============================================================ */
 
+/* ── Design Token ──────────────────────────────────────────── */
+/* Top-bar height used by sidebar and appWrapper offsets.       */
+:root {
+  --top-bar-h: 52px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TOP ACTION BAR
+   Fixed SaaS-style header: Brand | Project name | Save/Export
+   z-index 1100 — above sidebar (1000) and its toggle (1001).
+   ══════════════════════════════════════════════════════════════ */
+.top-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1100;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 24px;
+  height: var(--top-bar-h);
+  background: #0f172a;
+  border-bottom: 1px solid #1e293b;
+  box-sizing: border-box;
+}
+
+.top-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-title {
+  /* Override base.css h1 (which is a block-level elem).
+     .app-title is a <span> — inherits inline by default.  */
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+/* Thin pipe separator between brand and project name */
+.top-bar-divider {
+  color: #334155;
+  font-size: 18px;
+  font-weight: 300;
+  user-select: none;
+}
+
+.current-project-name {
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.top-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Compact the top-bar buttons slightly vs the default .btn size */
+.top-bar-actions .btn {
+  padding: 6px 14px;
+  font-size: 13px;
+}
+
 /* ── Main Container ────────────────────────────────────────── */
 .container {
   max-width: 1400px;
@@ -67,7 +141,7 @@
   flex: 1;
 }
 
-/* ── Action Button Container ───────────────────────────────── */
+/* ── Action Button Container (chart-level contextual actions) ─ */
 .button-container {
   display: flex;
   justify-content: center;

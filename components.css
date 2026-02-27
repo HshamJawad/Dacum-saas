@@ -3,150 +3,106 @@
    ============================================================ */
 
 /* ══════════════════════════════════════════════════════════════
-   BUTTONS
+   BUTTON DESIGN SYSTEM
+   Every button uses class="btn" + exactly one semantic modifier.
+   Modifiers: btn-primary · btn-secondary · btn-danger · btn-ghost
+   Legacy named classes (btn-add, btn-remove, btn-export, …) have
+   been removed. Special-context buttons — floating panel, card
+   delete circles, sidebar toggle tab, snapshot restore — retain
+   their own scoped rules in their respective sections below.
    ══════════════════════════════════════════════════════════════ */
 
-.btn-add {
-  background: linear-gradient(135deg, var(--color-success) 0%, var(--color-success-dark) 100%);
-  color: white;
-}
-.btn-add:hover { box-shadow: 0 5px 15px rgba(16,185,129,0.4); }
-
-.btn-remove {
-  background: linear-gradient(135deg, var(--color-danger-light) 0%, var(--color-danger) 100%);
-  color: white;
-}
-.btn-remove:hover { box-shadow: 0 5px 15px rgba(239,68,68,0.4); }
-
-.btn-export {
-  background: linear-gradient(135deg, #3b82f6 0%, var(--color-primary) 100%);
-  color: white;
-  padding: 14px 28px;
-  font-size: 1.15em;
-}
-.btn-export:hover { box-shadow: 0 5px 15px rgba(59,130,246,0.4); }
-
-.btn-export-word {
-  background: linear-gradient(135deg, var(--color-purple) 0%, var(--color-purple-dark) 100%);
-  color: white;
-  padding: 14px 28px;
-  font-size: 1.15em;
-}
-.btn-export-word:hover { box-shadow: 0 5px 15px rgba(139,92,246,0.4); }
-
-.btn-save-data {
-  background: linear-gradient(135deg, var(--color-success) 0%, var(--color-success-dark) 100%);
-  color: white;
-  padding: 14px 28px;
-  font-size: 1.15em;
-}
-.btn-save-data:hover { box-shadow: 0 5px 15px rgba(16,185,129,0.4); }
-
-.btn-load-data {
-  background: linear-gradient(135deg, var(--color-warning) 0%, var(--color-warning-dark) 100%);
-  color: white;
-  padding: 14px 28px;
-  font-size: 1.15em;
-}
-.btn-load-data:hover { box-shadow: 0 5px 15px rgba(245,158,11,0.4); }
-
-.btn-clear-all {
-  background: linear-gradient(135deg, var(--color-danger-light) 0%, var(--color-danger) 100%);
-  color: white;
-  padding: 14px 28px;
-  font-size: 1.15em;
-}
-.btn-clear-all:hover { box-shadow: 0 5px 15px rgba(239,68,68,0.4); }
-
-.btn-snapshot {
-  background: linear-gradient(135deg, var(--color-sky) 0%, var(--color-sky-dark) 100%);
-  color: white;
-  padding: 14px 22px;
-  font-size: 1.05em;
-}
-.btn-snapshot:hover { box-shadow: 0 5px 15px rgba(14,165,233,0.4); }
-
-.btn-rename {
-  background: linear-gradient(135deg, var(--color-warning) 0%, var(--color-warning-dark) 100%);
-  color: white;
-  padding: 8px 16px;
-  font-size: 0.95em;
-}
-.btn-rename:hover { box-shadow: 0 5px 15px rgba(245,158,11,0.4); }
-
-.btn-clear-section {
-  background: linear-gradient(135deg, var(--color-danger-light) 0%, var(--color-danger) 100%);
-  color: white;
-  padding: 8px 16px;
-  font-size: 0.95em;
-}
-.btn-clear-section:hover { box-shadow: 0 5px 15px rgba(239,68,68,0.4); }
-
-.btn-add-image {
-  background: linear-gradient(135deg, var(--color-purple) 0%, var(--color-purple-dark) 100%);
-  color: white;
-  padding: 8px 16px;
-  font-size: 0.95em;
-}
-.btn-add-image:hover { box-shadow: 0 5px 15px rgba(139,92,246,0.4); }
-
-.btn-remove-image {
-  background: linear-gradient(135deg, var(--color-danger-light) 0%, var(--color-danger) 100%);
-  color: white;
-  padding: 6px 12px;
-  font-size: 0.85em;
-}
-.btn-remove-image:hover { box-shadow: 0 5px 15px rgba(239,68,68,0.4); }
-
-.btn-toggle-info {
-  background: linear-gradient(135deg, var(--color-warning) 0%, var(--color-warning-dark) 100%);
-  color: white;
-  padding: 6px 14px;
-  font-size: 0.85em;
-  border: none;
+/* ── Base — geometry, typography, transitions ─────────────────
+   Shared by every btn-* modifier.                               */
+.btn {
+  padding: 8px 14px;
   border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  transition: var(--transition-base);
-}
-.btn-toggle-info:hover {
-  box-shadow: 0 3px 10px rgba(245,158,11,0.4);
-  transform: translateY(-1px);
+  transition: all 0.2s ease;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  line-height: 1.4;
+  text-decoration: none;
 }
 
-/* Undo / Redo */
-.btn-undo, .btn-redo {
-  background: linear-gradient(135deg, var(--color-slate-light) 0%, var(--color-slate) 100%);
-  color: white;
-  padding: 14px 22px;
-  font-size: 1.05em;
+.btn:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
 }
-.btn-undo:hover, .btn-redo:hover { box-shadow: 0 5px 15px rgba(71,85,105,0.4); }
-.btn-undo:disabled, .btn-redo:disabled {
+
+.btn:disabled {
   opacity: 0.38;
   cursor: not-allowed;
   transform: none !important;
   box-shadow: none !important;
 }
 
-/* View toggle — visual styles are now owned by .btn-primary / .btn-secondary.
-   This ID rule only provides a font-size override so the buttons match the
-   surrounding header scale. Removing background/color prevents the ID
-   specificity (1,0,0) from defeating the class-level (0,2,0) utility rules. */
-#toggleViewBtn, #toggleViewBtnCard {
-  font-size: 0.95em;
+/* ── Primary — filled blue. Use for: Save, Add, Create ───────── */
+.btn-primary {
+  background: #2563eb;
+  color: #ffffff;
+}
+.btn-primary:hover:not(:disabled) {
+  background: #1e40af;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+}
+.btn-primary:active:not(:disabled) {
+  background: #1e3a8a;
+  transform: translateY(0);
 }
 
-/* Remove section button (custom sections) */
-.btn-remove-section {
-  background: linear-gradient(135deg, var(--color-danger-light) 0%, var(--color-danger) 100%);
-  color: white;
-  padding: 8px 16px;
-  font-size: 0.95em;
-  border: none;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
+/* ── Secondary — outlined. Use for: Export, Load, Snapshot ──── */
+.btn-secondary {
+  background: transparent;
+  border: 1px solid #334155;
+  color: #cbd5e1;
 }
-.btn-remove-section:hover { box-shadow: 0 5px 15px rgba(239,68,68,0.4); }
+.btn-secondary:hover:not(:disabled) {
+  background: #1e293b;
+  border-color: #475569;
+  transform: translateY(-1px);
+}
+.btn-secondary:active:not(:disabled) {
+  background: #0f172a;
+  transform: translateY(0);
+}
+
+/* ── Danger — filled red. Use for: Delete, Remove, Clear All ─── */
+.btn-danger {
+  background: #dc2626;
+  color: #ffffff;
+}
+.btn-danger:hover:not(:disabled) {
+  background: #991b1b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+}
+.btn-danger:active:not(:disabled) {
+  background: #7f1d1d;
+  transform: translateY(0);
+}
+
+/* ── Ghost — no background. Use for: Rename, Clear, Toggles ──── */
+.btn-ghost {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+}
+.btn-ghost:hover:not(:disabled) {
+  background: #1e293b;
+  color: #cbd5e1;
+  transform: translateY(-1px);
+}
+.btn-ghost:active:not(:disabled) {
+  background: #0f172a;
+  transform: translateY(0);
+}
 
 /* ══════════════════════════════════════════════════════════════
    STATUS BANNER
@@ -390,17 +346,20 @@
 }
 .snap-item-label { color: #cbd5e1; font-size: 0.85em; flex: 1; }
 .snap-item-time  { color: var(--color-slate-light); font-size: 0.72em; }
+/* Snapshot restore — small primary button scoped to the panel */
 .snap-restore-btn {
-  background: var(--color-sky);
-  color: white;
+  background: #2563eb;
+  color: #fff;
   border: none;
   border-radius: 5px;
   padding: 4px 9px;
   font-size: 0.78em;
-  cursor: pointer;
   font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  white-space: nowrap;
 }
-.snap-restore-btn:hover { background: var(--color-sky-dark); transform: none; box-shadow: none; }
+.snap-restore-btn:hover { background: #1e40af; transform: none; box-shadow: none; }
 .snap-empty {
   color: var(--color-slate);
   font-size: 0.85em;
@@ -623,53 +582,17 @@
   font-style: italic;
 }
 
-/* ── Add Task inline button ─────────────────────────────────── */
+/* ── Card view add-button layout stubs ───────────────────────
+   Color/background/hover are owned by btn-primary.
+   These stubs provide only flex-context positioning that the
+   generic .btn class does not supply.                          */
 .cv-add-task {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  align-self: center;
-  flex-shrink: 0;
-  background: var(--color-success);
-  color: white;
-  border: none;
-  border-radius: 10px;
-  padding: 6px 12px;
-  font-size: 0.85em;
-  font-weight: 600;
-  cursor: pointer;
-  gap: 4px;
-  white-space: nowrap;
-  transition: background 0.2s, transform 0.15s;
-  box-shadow: 0 2px 6px rgba(16,185,129,0.2);
-}
-.cv-add-task:hover {
-  background: var(--color-success-dark);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+  align-self: center;  /* stay centred within the tasks flex row */
+  flex-shrink: 0;      /* prevent compression when space is tight */
 }
 
-/* ── Add Duty card view button ──────────────────────────────── */
 .cv-add-duty {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: linear-gradient(135deg, var(--color-success) 0%, var(--color-success-dark) 100%);
-  color: white;
-  border: none;
-  border-radius: 10px;
-  padding: 10px 22px;
-  font-size: 1em;
-  font-weight: 600;
-  cursor: pointer;
-  transition: var(--transition-fast);
-  box-shadow: 0 2px 8px rgba(16,185,129,0.25);
-  margin-top: 4px;
-}
-.cv-add-duty:hover {
-  background: linear-gradient(135deg, var(--color-success-dark) 0%, #047857 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(16,185,129,0.4);
+  margin-top: 4px;     /* small gap between grid and footer button */
 }
 
 /* ── Empty state note ───────────────────────────────────────── */
@@ -686,14 +609,7 @@
   flex-shrink: 0;
 }
 
-/* ── Add Section button (Additional Info tab) ───────────────── */
-.btn-add-section-main {
-  background: linear-gradient(135deg, var(--color-success) 0%, var(--color-success-dark) 100%);
-  color: white;
-  padding: 12px 24px;
-  font-size: 1.05em;
-}
-.btn-add-section-main:hover { box-shadow: 0 5px 15px rgba(16,185,129,0.4); }
+/* .btn-add-section-main removed — button uses btn btn-primary */
 
 /* ================================================================
    SIDEBAR — Project Management Layer
@@ -708,7 +624,8 @@ body {
 #appWrapper {
   margin-left: 260px;
   min-height: 100vh;
-  padding: 20px;
+  /* top padding = top-bar height (52px) + original 20px gap */
+  padding: calc(var(--top-bar-h, 52px) + 20px) 20px 20px;
   box-sizing: border-box;
   transition: margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -721,9 +638,11 @@ body.sb-sidebar-closed #appWrapper {
 #sidebar {
   position: fixed;
   left: 0;
-  top: 0;
+  /* Sit directly below the fixed top-bar */
+  top: var(--top-bar-h, 52px);
   width: 260px;
-  height: 100vh;
+  /* Shrink height so sidebar does not extend behind top-bar */
+  height: calc(100vh - var(--top-bar-h, 52px));
   background: #13192a;
   border-right: 1px solid #1e2a40;
   display: flex;
@@ -743,7 +662,9 @@ body.sb-sidebar-closed #appWrapper {
    transition timing as the sidebar panel. */
 #sidebarToggleBtn {
   position: fixed;
-  top: 50%;
+  /* Visually centred in the sidebar area below the top-bar:
+     top-bar-h + half of remaining viewport height           */
+  top: calc(var(--top-bar-h, 52px) + (100vh - var(--top-bar-h, 52px)) / 2);
   left: 260px;
   transform: translateY(-50%);
   width: 18px;
@@ -766,7 +687,7 @@ body.sb-sidebar-closed #appWrapper {
               background 0.18s, color 0.18s;
 }
 
-/* Maintain vertical centering through all hover states */
+/* Maintain vertical centering through all hover / active states */
 #sidebarToggleBtn:hover {
   transform: translateY(-50%);
   background: #263348;
@@ -803,24 +724,7 @@ body.sb-sidebar-closed #appWrapper {
   text-transform: uppercase;
 }
 
-.sb-new-btn {
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: #fff;
-  border: none;
-  border-radius: 7px;
-  padding: 5px 10px;
-  font-size: 0.78em;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-  letter-spacing: 0.02em;
-  transition: background 0.18s, transform 0.15s, box-shadow 0.18s;
-}
-.sb-new-btn:hover {
-  background: linear-gradient(135deg, #059669, #047857);
-  transform: translateY(-1px);
-  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.35);
-}
+/* .sb-new-btn removed — button uses btn btn-primary */
 
 /* ── Search input ────────────────────────────────────────────── */
 .sb-search {
@@ -993,140 +897,6 @@ body.sb-sidebar-closed #appWrapper {
   letter-spacing: 0.08em;
 }
 
-/* ── File Engine buttons ────────────────────────────────────────
-   Export Project: teal — signals "outbound project data"
-   Import Project: indigo — signals "inbound project data"
-   Both follow the exact same shape/rhythm as existing buttons. */
+/* .btn-export-project + .btn-import-project removed — buttons use btn btn-secondary */
 
-.btn-export-project {
-  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-sm, 8px);
-  padding: 10px 16px;
-  font-size: 0.95em;
-  font-weight: 600;
-  cursor: pointer;
-  transition: box-shadow 0.2s, transform 0.15s;
-  box-shadow: 0 2px 8px rgba(13,148,136,0.25);
-}
-.btn-export-project:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(13,148,136,0.4);
-}
 
-.btn-import-project {
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-sm, 8px);
-  padding: 10px 16px;
-  font-size: 0.95em;
-  font-weight: 600;
-  cursor: pointer;
-  transition: box-shadow 0.2s, transform 0.15s;
-  box-shadow: 0 2px 8px rgba(99,102,241,0.25);
-}
-.btn-import-project:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(99,102,241,0.4);
-}
-
-/* ================================================================
-   DESIGN SYSTEM UTILITY BUTTONS (v2)
-   Composable classes: <button class="btn btn-primary">…</button>
-   These coexist with the existing named-button classes above.
-   Specificity: (0,2,0) = two classes, beats (0,1,0) single class.
-   ================================================================ */
-
-/* ── Base — shared geometry & behaviour ─────────────────────── */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border-radius: 6px;
-  font-weight: 500;
-  font-size: 14px;
-  line-height: 1.4;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
-  white-space: nowrap;
-  text-decoration: none;
-  outline: none;
-}
-
-.btn:focus-visible {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
-}
-
-.btn:disabled {
-  opacity: 0.38;
-  cursor: not-allowed;
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-/* ── Primary — high-emphasis, filled blue ───────────────────── */
-.btn.btn-primary {
-  background: #2563eb;
-  color: #fff;
-  border: none;
-}
-.btn.btn-primary:hover:not(:disabled) {
-  background: #1e40af;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.45);
-}
-.btn.btn-primary:active:not(:disabled) {
-  background: #1e3a8a;
-  transform: translateY(0);
-}
-
-/* ── Secondary — medium-emphasis, outlined ──────────────────── */
-.btn.btn-secondary {
-  background: transparent;
-  border: 1px solid #334155;
-  color: #cbd5e1;
-}
-.btn.btn-secondary:hover:not(:disabled) {
-  background: #1e293b;
-  border-color: #475569;
-  transform: translateY(-1px);
-}
-.btn.btn-secondary:active:not(:disabled) {
-  background: #0f172a;
-  transform: translateY(0);
-}
-
-/* ── Danger — destructive actions, filled red ───────────────── */
-.btn.btn-danger {
-  background: #dc2626;
-  color: #fff;
-  border: none;
-}
-.btn.btn-danger:hover:not(:disabled) {
-  background: #991b1b;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.45);
-}
-.btn.btn-danger:active:not(:disabled) {
-  background: #7f1d1d;
-  transform: translateY(0);
-}
-
-/* ── Ghost — low-emphasis, no border ────────────────────────── */
-.btn.btn-ghost {
-  background: transparent;
-  border: none;
-  color: #94a3b8;
-}
-.btn.btn-ghost:hover:not(:disabled) {
-  background: #1e293b;
-  color: #cbd5e1;
-}
-.btn.btn-ghost:active:not(:disabled) {
-  background: #0f172a;
-}

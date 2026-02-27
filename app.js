@@ -4,15 +4,15 @@
 // the sidebar, and bootstraps the app on DOMContentLoaded.
 // ============================================================
 import { AppState, StateManager, applyProjectState, extractProjectState } from './state.js';
-import { showStatus }                                                       from './design-system.js';
+import { showStatus }                                                       from './js/design-system.js';
 import {
     undo, redo, updateHistoryButtons, setHistoryRender,
     promptSnapshot, toggleSnapshotPanel, restoreSnapshot,
     SnapshotManager, refreshSnapshotList, escapeHtml
-} from './history.js';
+} from './js/history.js';
 import { saveToLocalStorage, setSaveHook }   from './storage.js';
 import { initFileEngine }                    from './fileEngine.js';
-import { Renderer, setRendererActions }      from './renderer.js';
+import { Renderer, setRendererActions }      from './js/renderer.js';
 import {
     EventBinder,
     addDuty, removeDuty, addTask, removeTask,
@@ -23,7 +23,7 @@ import {
     saveToJSON, loadFromJSON,
     exportToWord, exportToPDF,
     exportProjectFile, importProjectFile
-} from './events.js';
+} from './js/events.js';
 import {
     createProject, deleteProject, renameProject,
     setActiveProject, getActiveProject, getAllProjects,
@@ -202,6 +202,9 @@ function _loadProjectIntoUI(proj) {
     updateHistoryButtons();
     Renderer.renderAll(StateManager.state);
     refreshSnapshotList();
+
+    // Reflect project name in the top-bar
+    _updateTopBarProjectName(getActiveProject()?.name);
 }
 
 // ── Project switching (public, exposed to window) ─────────────
@@ -240,6 +243,24 @@ function _setSidebarState(open) {
         body.classList.add('sb-sidebar-closed');
         if (toggleIcon) toggleIcon.textContent = '▶';
     }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  TOP-BAR HELPERS
+// ══════════════════════════════════════════════════════════════
+
+/**
+ * Reflect the active project's name in the top-bar.
+ * Called after every project switch, creation, rename, and on init.
+ * Safe to call before DOMContentLoaded — querySelector returns null
+ * and the function exits cleanly.
+ *
+ * @param {string|null} name — project name, or null to show placeholder
+ */
+function _updateTopBarProjectName(name) {
+    const el = document.getElementById('currentProjectName');
+    if (!el) return;
+    el.textContent = name || 'Untitled Project';
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -324,7 +345,28 @@ window.addEventListener('DOMContentLoaded', () => {
     renderSidebar();
     _setSidebarState(true);
 
-    // ── 5. Expose all functions to window ──────────────────────
+    // ── 5a. Wire top-bar buttons ───────────────────────────────
+    //
+    // Save  → saveToLocalStorage (pure localStorage, no download)
+    //         + visual confirmation via showStatus
+    // Export → fileEngine exportProject (versioned .json download)
+    // Import → trigger the hidden file input, fileEngine handles
+    //           parsing and onImportSuccess callback
+    //
+    document.getElementById('saveProjectBtn')?.addEventListener('click', () => {
+        saveToLocalStorage();
+        showStatus('Project saved ✓', 'success');
+    });
+
+    document.getElementById('exportProjectBtn')?.addEventListener('click', () => {
+        window.exportProjectFile();
+    });
+
+    document.getElementById('importProjectBtn')?.addEventListener('click', () => {
+        document.getElementById('importProjectInput')?.click();
+    });
+
+    // ── 5b. Expose all functions to window ─────────────────────
     //       Inline onclick="..." attributes in the HTML need globals.
     Object.assign(window, {
         // ── Duty / Task ──────────────────────────────────────────
@@ -400,6 +442,10 @@ window.addEventListener('DOMContentLoaded', () => {
             renameProject(id, newName.trim());
             persistProjects();
             renderSidebar();
+            // Update top-bar if renaming the active project
+            if (getActiveProject()?.id === id) {
+                _updateTopBarProjectName(newName.trim());
+            }
         },
 
         pmToggleSidebar:  ()     => _setSidebarState(!_sidebarOpen),

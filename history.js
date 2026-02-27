@@ -1,9 +1,10 @@
 // ============================================================
-// history.js — Command-Based Undo / Redo System
+// history.js — Command-Based Undo / Redo + Per-Project Snapshots
 // ============================================================
 import { AppState, StateManager } from './state.js';
 import { saveToLocalStorage } from './storage.js';
 import { showStatus } from './design-system.js';
+import ProjectManager from './project-manager.js';
 
 // ── Utilities ────────────────────────────────────────────────
 export function deepClone(obj) {
@@ -199,27 +200,44 @@ export function makeClearAllCmd(priorDuties, priorDutyCount, priorTaskCounts) {
 }
 
 // ══════════════════════════════════════════════════════════════
-//  SNAPSHOT VERSIONING
-//  Uses deep-clone for intentional full-state copies.
+//  SNAPSHOT VERSIONING — per-project
+//
+//  SnapshotManager is a live proxy to the active project's
+//  snapshots array.  All code that accesses .snapshots will
+//  automatically read/write the correct project's list.
 // ══════════════════════════════════════════════════════════════
 
-export const SnapshotManager = { snapshots: [] };
+export const SnapshotManager = {
+    /** Always returns the active project's snapshot array */
+    get snapshots() {
+        const p = ProjectManager.getActiveProject();
+        return p ? p.snapshots : [];
+    }
+};
 
 export function createSnapshot(label) {
-    label = label || ('Snapshot ' + (SnapshotManager.snapshots.length + 1));
-    SnapshotManager.snapshots.push({
+    const proj = ProjectManager.getActiveProject();
+    if (!proj) return;
+
+    label = label || ('Snapshot ' + (proj.snapshots.length + 1));
+    proj.snapshots.push({
         label,
         timestamp: new Date().toISOString(),
-        state: deepClone(AppState)
+        state:     deepClone(AppState)
     });
-    if (SnapshotManager.snapshots.length > 20) SnapshotManager.snapshots.shift();
+    if (proj.snapshots.length > 20) proj.snapshots.shift();
+
     refreshSnapshotList();
+    saveToLocalStorage();   // also persists the new snapshot
     showStatus('Snapshot saved: "' + label + '" ✓', 'success');
 }
 
 export function restoreSnapshot(index) {
-    const snap = SnapshotManager.snapshots[index];
+    const proj = ProjectManager.getActiveProject();
+    if (!proj) return;
+    const snap = proj.snapshots[index];
     if (!snap) return;
+
     const prior = deepClone(AppState);
     const cmd = {
         type: 'RESTORE_SNAPSHOT',
@@ -242,14 +260,16 @@ export function promptSnapshot() {
 export function refreshSnapshotList() {
     const list = document.getElementById('snapshotList');
     if (!list) return;
-    if (SnapshotManager.snapshots.length === 0) {
+    const snaps = SnapshotManager.snapshots;
+
+    if (snaps.length === 0) {
         list.innerHTML = '<div class="snap-empty">No snapshots yet. Click 📸 to save one.</div>';
         return;
     }
     list.innerHTML = '';
-    const snaps = SnapshotManager.snapshots.slice().reverse();
-    snaps.forEach((snap, i) => {
-        const realIdx = SnapshotManager.snapshots.length - 1 - i;
+    const reversed = snaps.slice().reverse();
+    reversed.forEach((snap, i) => {
+        const realIdx = snaps.length - 1 - i;
         const d = new Date(snap.timestamp);
         const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
@@ -258,9 +278,11 @@ export function refreshSnapshotList() {
         item.innerHTML =
             '<div>' +
                 '<div class="snap-item-label">' + escapeHtml(snap.label) + '</div>' +
-                '<div class="snap-item-time">' + dateStr + ' ' + timeStr + ' · ' + snap.state.duties.length + ' duties</div>' +
+                '<div class="snap-item-time">' + dateStr + ' ' + timeStr +
+                    ' · ' + (snap.state.duties || []).length + ' duties</div>' +
             '</div>' +
-            '<button class="snap-restore-btn" onclick="window.restoreSnapshot(' + realIdx + '); window.toggleSnapshotPanel();">Restore</button>';
+            '<button class="snap-restore-btn" onclick="window.restoreSnapshot(' + realIdx + ')' +
+                '; window.toggleSnapshotPanel();">Restore</button>';
         list.appendChild(item);
     });
 }
@@ -287,5 +309,8 @@ export function openStateInspector() {
         StateManager.redoStack.map(c => c.type));
     console.log('%cSnapshots (' + SnapshotManager.snapshots.length + ')', 'color:#0ea5e9;font-weight:bold',
         SnapshotManager.snapshots.map(s => s.label));
+    const proj = ProjectManager.getActiveProject();
+    if (proj) console.log('%cActive Project', 'color:#a855f7;font-weight:bold',
+        proj.name, '— id:', proj.id);
     console.groupEnd();
 }
