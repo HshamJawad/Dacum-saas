@@ -4,15 +4,15 @@
 // the sidebar, and bootstraps the app on DOMContentLoaded.
 // ============================================================
 import { AppState, StateManager, applyProjectState, extractProjectState } from './state.js';
-import { showStatus }                                                       from './js/design-system.js';
+import { showStatus }                                                       from './design-system.js';
 import {
     undo, redo, updateHistoryButtons, setHistoryRender,
     promptSnapshot, toggleSnapshotPanel, restoreSnapshot,
     SnapshotManager, refreshSnapshotList, escapeHtml
-} from './js/history.js';
+} from './history.js';
 import { saveToLocalStorage, setSaveHook }   from './storage.js';
 import { initFileEngine }                    from './fileEngine.js';
-import { Renderer, setRendererActions }      from './js/renderer.js';
+import { Renderer, setRendererActions }      from './renderer.js';
 import {
     EventBinder,
     addDuty, removeDuty, addTask, removeTask,
