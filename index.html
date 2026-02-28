@@ -74,12 +74,14 @@
     <h1>📊 DACUM Chart Generator</h1>
 
     <!-- ══════════════════════════════════════════════════════
-         TOP TOOLBAR
+         TOP TOOLBAR (fixed)
          ══════════════════════════════════════════════════════ -->
     <div class="top-toolbar">
+
+        <!-- Left action groups ──────────────────────────────── -->
         <div class="top-toolbar-group">
             <button id="btnSnapshot"
-                    class="tb-btn tb-btn--sky"
+                    class="tb-btn tb-btn--neutral"
                     type="button"
                     onclick="promptSnapshot()"
                     title="Save a named snapshot of the current state">
@@ -91,14 +93,14 @@
 
         <div class="top-toolbar-group">
             <button id="btnExportProject"
-                    class="tb-btn tb-btn--teal"
+                    class="tb-btn tb-btn--primary"
                     type="button"
                     onclick="exportProjectFile()"
                     title="Export the active project as a versioned JSON file">
                 📤 Export Project
             </button>
             <button id="btnImportProject"
-                    class="tb-btn tb-btn--amber"
+                    class="tb-btn tb-btn--neutral"
                     type="button"
                     onclick="document.getElementById('importProjectInput').click()"
                     title="Import a previously exported project JSON file">
@@ -110,14 +112,14 @@
 
         <div class="top-toolbar-group">
             <button id="btnExportPDF"
-                    class="tb-btn tb-btn--blue"
+                    class="tb-btn tb-btn--neutral"
                     type="button"
                     onclick="exportToPDF()"
                     title="Export the DACUM chart as a PDF document">
                 📄 Export PDF
             </button>
             <button id="btnExportWord"
-                    class="tb-btn tb-btn--purple"
+                    class="tb-btn tb-btn--neutral"
                     type="button"
                     onclick="exportToWord()"
                     title="Export the DACUM chart as a Word (DOCX) document">
@@ -136,6 +138,39 @@
                 🗑️ Clear All
             </button>
         </div>
+
+        <!-- Spacer pushes Undo/Redo to the far right ────────── -->
+        <div class="top-toolbar-spacer"></div>
+
+        <div class="top-toolbar-divider"></div>
+
+        <!-- Right: Undo / Redo / Snapshots ──────────────────── -->
+        <div class="top-toolbar-group">
+            <button id="floatUndoBtn"
+                    class="tb-btn tb-btn--ghost"
+                    type="button"
+                    onclick="undo()"
+                    disabled
+                    title="Undo (Ctrl+Z)">
+                ↩ Undo
+            </button>
+            <button id="floatRedoBtn"
+                    class="tb-btn tb-btn--ghost"
+                    type="button"
+                    onclick="redo()"
+                    disabled
+                    title="Redo (Ctrl+Y)">
+                ↪ Redo
+            </button>
+            <button id="debugBtn"
+                    class="tb-btn tb-btn--ghost"
+                    type="button"
+                    onclick="toggleSnapshotPanel()"
+                    title="View saved snapshots">
+                🔍
+            </button>
+        </div>
+
     </div>
 
     <!-- Info Box ─────────────────────────────────────────── -->
@@ -374,17 +409,7 @@
 
 </div><!-- /#appWrapper -->
 
-<!-- ══════════════════════════════════════════════════════════
-     FLOATING CONTROL PANEL  (position:fixed — outside flow)
-     ══════════════════════════════════════════════════════════ -->
-<div id="floatingPanel">
-    <button id="floatUndoBtn" type="button" onclick="undo()" disabled title="Undo (Ctrl+Z)">↩ Undo</button>
-    <button id="floatRedoBtn" type="button" onclick="redo()" disabled title="Redo (Ctrl+Y)">↪ Redo</button>
-    <div class="fp-divider"></div>
-    <button id="debugBtn"     type="button" onclick="toggleSnapshotPanel()" title="Snapshots / Debug">🔍</button>
-</div>
-
-<div id="snapshotPanel">
+<!-- Snapshot panel (opened by 🔍 in toolbar) ──────────── --><div id="snapshotPanel">
     <h4>📸 Saved Snapshots</h4>
     <div id="snapshotList"></div>
 </div>

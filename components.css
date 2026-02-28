@@ -303,48 +303,13 @@
   gap: 10px;
 }
 
-/* ══════════════════════════════════════════════════════════════
-   FLOATING CONTROL PANEL
-   ══════════════════════════════════════════════════════════════ */
-#floatingPanel {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  gap: var(--gap-xs);
-  background: var(--surface-dark);
-  border: 1px solid var(--surface-dark-mid);
-  border-radius: var(--radius-lg);
-  padding: 8px 12px;
-  box-shadow: var(--shadow-float);
-}
-#floatingPanel button {
-  background: var(--surface-dark-mid);
-  color: #cbd5e1;
-  border: none;
-  border-radius: var(--radius-sm);
-  padding: 7px 14px;
-  font-size: 0.88em;
-  font-weight: 700;
-  cursor: pointer;
-  transition: var(--transition-fast);
-  white-space: nowrap;
-}
-#floatingPanel button:hover:not(:disabled) {
-  background: var(--color-slate);
-  color: #f1f5f9;
-  transform: translateY(-1px);
-}
-#floatingPanel button:disabled {
-  opacity: 0.32;
-  cursor: not-allowed;
-  transform: none;
-}
-#floatUndoBtn, #floatRedoBtn { min-width: 72px; }
-#floatSnapBtn, #debugBtn { padding: 7px 10px; font-size: 1em; }
+/* ── Floating control panel — REMOVED
+   Undo / Redo / Debug have moved into the fixed top toolbar.
+   These rules are kept as a tombstone so any cached CSS reference
+   does not throw a parse error.
+   ─────────────────────────────────────────────────────────────── */
 
+/* Legacy fp-divider — kept for snapshot panel internal use */
 .fp-divider {
   width: 1px;
   height: 22px;
@@ -709,6 +674,7 @@ body {
   margin-left: 260px;
   min-height: 100vh;
   padding: 20px;
+  padding-top: 72px;               /* 56px toolbar + 16px breathing room */
   box-sizing: border-box;
   transition: margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
