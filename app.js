@@ -53,10 +53,11 @@ StateManager.configure({
 // ── Wire save hook ─────────────────────────────────────────────
 // Every call to saveToLocalStorage() (from history, events, etc.)
 // ends up here: sync live state → active project record → disk.
+// extractProjectState() now includes AppState.snapshots, so no
+// separate wiring is needed.
 setSaveHook(() => {
     updateActiveProjectData({
-        state:     extractProjectState(),
-        snapshots: JSON.parse(JSON.stringify(SnapshotManager.snapshots))
+        state: extractProjectState()
     });
     persistProjects();
 });
@@ -138,9 +139,9 @@ function _relDate(isoString) {
 
 /** Save current project data before switching away */
 function _saveCurrentProject() {
+    // extractProjectState() includes AppState.snapshots — no separate key needed.
     updateActiveProjectData({
-        state:     extractProjectState(),
-        snapshots: JSON.parse(JSON.stringify(SnapshotManager.snapshots))
+        state: extractProjectState()
     });
 }
 
@@ -160,8 +161,13 @@ function _loadProjectIntoUI(proj) {
         AppState.duties.push({ id: dutyId, title: '', tasks: [{ id: 'task_' + dutyId + '_1', text: '' }] });
     }
 
-    // 3. Restore per-project snapshots
-    SnapshotManager.snapshots = JSON.parse(JSON.stringify(proj.snapshots || []));
+    // 3. Restore per-project snapshots are now handled inside applyProjectState
+    //    via AppState.snapshots — no separate wiring needed here.
+    //    For backward-compat with project records that stored snapshots at the
+    //    top level (old format), merge them in if AppState.snapshots is empty.
+    if (AppState.snapshots.length === 0 && Array.isArray(proj.snapshots) && proj.snapshots.length > 0) {
+        AppState.snapshots = JSON.parse(JSON.stringify(proj.snapshots));
+    }
 
     // 4. Clear undo/redo — command closures cannot be serialised
     StateManager.undoStack = [];
@@ -384,9 +390,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // ── 3. Save initial state to project record ────────────────
     //       (seeds the project if it was brand new / migrated)
+    //       extractProjectState() now includes AppState.snapshots.
     updateActiveProjectData({
-        state:     extractProjectState(),
-        snapshots: JSON.parse(JSON.stringify(SnapshotManager.snapshots))
+        state: extractProjectState()
     });
     persistProjects();
 

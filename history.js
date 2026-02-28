@@ -200,41 +200,58 @@ export function makeClearAllCmd(priorDuties, priorDutyCount, priorTaskCounts) {
 
 // ══════════════════════════════════════════════════════════════
 //  SNAPSHOT VERSIONING
-//  Uses deep-clone for intentional full-state copies.
+//  Single source of truth: AppState.snapshots
+//  SnapshotManager is kept as a thin alias so any external code
+//  that references it continues to work unchanged.
 // ══════════════════════════════════════════════════════════════
 
-export const SnapshotManager = { snapshots: [] };
+// Alias — delegates to AppState.snapshots so there is only one array.
+export const SnapshotManager = {
+    get snapshots() { return AppState.snapshots; },
+    set snapshots(v) { AppState.snapshots = v; }
+};
 
 export function createSnapshot(label) {
-    label = label || ('Snapshot ' + (SnapshotManager.snapshots.length + 1));
-    SnapshotManager.snapshots.push({
+    label = label || ('Snapshot ' + (AppState.snapshots.length + 1));
+    AppState.snapshots.push({
         label,
         timestamp: new Date().toISOString(),
         state: deepClone(AppState)
     });
-    if (SnapshotManager.snapshots.length > 20) SnapshotManager.snapshots.shift();
+    // Cap at 20 most-recent snapshots
+    if (AppState.snapshots.length > 20) AppState.snapshots.shift();
+    // Persist immediately so snapshots survive page reloads and
+    // project switches — this was the primary data-loss bug.
+    saveToLocalStorage();
     refreshSnapshotList();
     showStatus('Snapshot saved: "' + label + '" ✓', 'success');
 }
 
 export function restoreSnapshot(index) {
-    const snap = SnapshotManager.snapshots[index];
+    const snap = AppState.snapshots[index];
     if (!snap) return;
+
     const prior = deepClone(AppState);
-    // Preserve the current view mode — restoring data must not
-    // force a view switch the user didn't ask for (Issue 2 fix).
+    // Preserve live view mode and snapshot list across the restore.
+    // The snapshot's own isCardView / snapshots must NOT overwrite
+    // the current session state.
     const currentIsCardView = AppState.isCardView;
+    const currentSnapshots  = deepClone(AppState.snapshots);
+
     const cmd = {
         type: 'RESTORE_SNAPSHOT',
         payload: { label: snap.label },
         execute() {
             Object.assign(AppState, deepClone(snap.state));
-            AppState.isCardView = currentIsCardView;  // keep live view
+            AppState.isCardView = currentIsCardView;  // keep live view mode
+            AppState.snapshots  = currentSnapshots;   // keep live snapshot list
         },
-        undo()    { Object.assign(AppState, prior); }
+        undo() { Object.assign(AppState, prior); }
     };
     cmd.execute();
     pushCommand(cmd);
+    saveToLocalStorage();          // persist restored state immediately
+    refreshSnapshotList();         // re-render list (requirement 5)
     if (_renderFn) _renderFn(StateManager.state);
     showStatus('Snapshot restored: "' + snap.label + '" ✓', 'success');
 }
@@ -248,23 +265,27 @@ export function promptSnapshot() {
 export function refreshSnapshotList() {
     const list = document.getElementById('snapshotList');
     if (!list) return;
-    if (SnapshotManager.snapshots.length === 0) {
+    // Always read from AppState.snapshots — the single source of truth.
+    const snaps = AppState.snapshots;
+    if (!snaps || snaps.length === 0) {
         list.innerHTML = '<div class="snap-empty">No snapshots yet. Click 📸 to save one.</div>';
         return;
     }
     list.innerHTML = '';
-    const snaps = SnapshotManager.snapshots.slice().reverse();
-    snaps.forEach((snap, i) => {
-        const realIdx = SnapshotManager.snapshots.length - 1 - i;
-        const d = new Date(snap.timestamp);
+    const reversed = snaps.slice().reverse();
+    reversed.forEach((snap, i) => {
+        const realIdx = snaps.length - 1 - i;
+        const d       = new Date(snap.timestamp);
         const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        const dutyLen = (snap.state && Array.isArray(snap.state.duties))
+                        ? snap.state.duties.length : 0;
         const item = document.createElement('div');
         item.className = 'snap-item';
         item.innerHTML =
             '<div>' +
                 '<div class="snap-item-label">' + escapeHtml(snap.label) + '</div>' +
-                '<div class="snap-item-time">' + dateStr + ' ' + timeStr + ' · ' + snap.state.duties.length + ' duties</div>' +
+                '<div class="snap-item-time">' + dateStr + ' ' + timeStr + ' · ' + dutyLen + ' duties</div>' +
             '</div>' +
             '<button class="snap-restore-btn" onclick="window.restoreSnapshot(' + realIdx + '); window.toggleSnapshotPanel();">Restore</button>';
         list.appendChild(item);
@@ -275,7 +296,7 @@ export function toggleSnapshotPanel() {
     const panel = document.getElementById('snapshotPanel');
     if (!panel) return;
     if (panel.style.display === 'none' || panel.style.display === '') {
-        refreshSnapshotList();
+        refreshSnapshotList();         // always re-render before showing
         panel.style.display = 'block';
     } else {
         panel.style.display = 'none';
@@ -291,7 +312,7 @@ export function openStateInspector() {
         StateManager.undoStack.map(c => c.type));
     console.log('%cRedo Stack (' + StateManager.redoStack.length + ')', 'color:#ef4444;font-weight:bold',
         StateManager.redoStack.map(c => c.type));
-    console.log('%cSnapshots (' + SnapshotManager.snapshots.length + ')', 'color:#0ea5e9;font-weight:bold',
-        SnapshotManager.snapshots.map(s => s.label));
+    console.log('%cSnapshots (' + AppState.snapshots.length + ')', 'color:#0ea5e9;font-weight:bold',
+        AppState.snapshots.map(s => s.label));
     console.groupEnd();
 }

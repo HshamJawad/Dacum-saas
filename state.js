@@ -15,7 +15,8 @@ export const AppState = {
     duties:      [],   // Array<{ id: string, title: string, tasks: Array<{id, text}> }>
     taskCounts:  {},   // { dutyId: number } — monotonic counter per duty
     dutyCount:   0,    // monotonic global duty counter
-    isCardView:  true  // default to card view; overridden by user preference in app.js
+    isCardView:  true, // default to card view; overridden by user preference in app.js
+    snapshots:   []    // Single source of truth — history.js reads/writes here directly
 };
 
 /**
@@ -82,6 +83,9 @@ export function applyProjectState(projectState) {
     AppState.taskCounts  = JSON.parse(JSON.stringify(projectState.taskCounts  || {}));
     AppState.dutyCount   = typeof projectState.dutyCount === 'number' ? projectState.dutyCount : 0;
     AppState.isCardView  = false; // always open projects in table view for clean UX
+    // Snapshots live in AppState — restore them here so history.js
+    // always has the correct array without any separate wiring in app.js.
+    AppState.snapshots   = JSON.parse(JSON.stringify(projectState.snapshots   || []));
 }
 
 /**
@@ -93,6 +97,7 @@ export function extractProjectState() {
         duties:     AppState.duties,
         taskCounts: AppState.taskCounts,
         dutyCount:  AppState.dutyCount,
-        isCardView: AppState.isCardView
+        isCardView: AppState.isCardView,
+        snapshots:  AppState.snapshots   // persisted as part of state — no separate array needed
     }));
 }

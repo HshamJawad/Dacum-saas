@@ -956,10 +956,16 @@ export const EventBinder = {
         });
 
         // ── Close snapshot panel on outside click ───────────────
+        // #floatingPanel was removed — the trigger is now #debugBtn
+        // in the toolbar. Exclude it so the same click that opens the
+        // panel doesn't immediately re-close it via this listener.
         document.addEventListener('click', e => {
-            const panel = document.getElementById('snapshotPanel');
-            const fp    = document.getElementById('floatingPanel');
-            if (panel && panel.style.display === 'block' && !panel.contains(e.target) && !(fp && fp.contains(e.target))) {
+            const panel    = document.getElementById('snapshotPanel');
+            const debugBtn = document.getElementById('debugBtn');
+            if (panel
+                && panel.style.display === 'block'
+                && !panel.contains(e.target)
+                && !(debugBtn && debugBtn.contains(e.target))) {
                 panel.style.display = 'none';
             }
         });
