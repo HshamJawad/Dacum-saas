@@ -250,28 +250,97 @@ export function renderSidebar(filterText) {
 
     list.innerHTML = '';
     visible.forEach(proj => {
-        const isActive   = proj.id === active?.id;
-        const dutyCount  = proj.state?.duties?.length || 0;
-        const dateStr    = _relDate(proj.updatedAt);
+        const isActive  = proj.id === active?.id;
+        const dutyCount = proj.state?.duties?.length || 0;
+        const dateStr   = _relDate(proj.updatedAt);
 
+        // ── Editing-mode flag ─────────────────────────────────
+        // Scoped per card. Toggled only by the rename button.
+        // All other click paths check this before acting.
+        let _editing = false;
+
+        // ── Card root ─────────────────────────────────────────
         const card = document.createElement('div');
         card.className   = 'sb-project-card' + (isActive ? ' sb-active' : '');
         card.dataset.pid = proj.id;
 
-        // ── Phase 3: inline-editable project name ────────────
-        // Double-click activates editing; single click (on card-body)
-        // still switches the active project via the listener below.
+        // ── Project name (display only by default) ────────────
         const nameEl = document.createElement('div');
-        nameEl.className = 'sb-card-name';
-        nameEl.textContent = proj.name;
-        nameEl.title = proj.name;
+        nameEl.className       = 'sb-card-name';
+        nameEl.textContent     = proj.name;
+        nameEl.title           = proj.name;
         nameEl.contentEditable = 'false';
 
-        nameEl.addEventListener('dblclick', (e) => {
-            e.stopPropagation();   // prevent card-body switch on dblclick
+        // Commit or cancel depending on key pressed
+        nameEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                nameEl.blur();          // triggers the blur → save path
+            }
+            if (e.key === 'Escape') {
+                nameEl.textContent     = proj.name;   // discard changes
+                nameEl.contentEditable = 'false';
+                nameEl.classList.remove('sb-name-editing');
+                _editing = false;
+            }
+        });
+
+        // Save on blur (fires after Enter-blur and after clicking away)
+        nameEl.addEventListener('blur', () => {
+            if (!_editing) return;      // blur can fire spuriously; guard it
+            nameEl.contentEditable = 'false';
+            nameEl.classList.remove('sb-name-editing');
+            _editing = false;
+
+            const newName = nameEl.textContent.trim();
+            if (!newName) {
+                // Revert to last-known good name
+                nameEl.textContent = proj.name || 'Untitled Project';
+                return;
+            }
+            if (newName !== proj.name) {
+                renameProject(proj.id, newName);
+                persistProjects();
+                proj.name      = newName;
+                nameEl.title   = newName;
+            }
+        });
+
+        // ── Meta row ──────────────────────────────────────────
+        const metaEl = document.createElement('div');
+        metaEl.className = 'sb-card-meta';
+        metaEl.innerHTML =
+            `<span class="sb-meta-item">🕐 ${dateStr}</span>` +
+            `<span class="sb-meta-item">📋 ${dutyCount} ${dutyCount === 1 ? 'duty' : 'duties'}</span>`;
+
+        // ── Card body (switches project on click) ─────────────
+        const cardBody = document.createElement('div');
+        cardBody.className = 'sb-card-body';
+        cardBody.appendChild(nameEl);
+        cardBody.appendChild(metaEl);
+
+        cardBody.addEventListener('click', () => {
+            if (_editing) return;       // block switching while renaming
+            _switchToProject(proj.id);
+        });
+
+        // ── Rename button (✎) — ONLY trigger for edit mode ───
+        const renameBtn = document.createElement('button');
+        renameBtn.type      = 'button';
+        renameBtn.className = 'sb-rename-btn';
+        renameBtn.title     = 'Rename project';
+        renameBtn.textContent = '✎';
+
+        renameBtn.addEventListener('click', (e) => {
+            e.stopPropagation();        // never switches project
+            if (_editing) return;       // already editing, ignore
+
+            _editing               = true;
             nameEl.contentEditable = 'true';
             nameEl.classList.add('sb-name-editing');
             nameEl.focus();
+
+            // Select all text so user can type immediately
             const range = document.createRange();
             range.selectNodeContents(nameEl);
             const sel = window.getSelection();
@@ -279,67 +348,25 @@ export function renderSidebar(filterText) {
             sel.addRange(range);
         });
 
-        nameEl.addEventListener('blur', () => {
-            nameEl.contentEditable = 'false';
-            nameEl.classList.remove('sb-name-editing');
-            const newName = nameEl.textContent.trim();
-            if (!newName) {
-                // Empty — fall back to existing name or "Untitled Project"
-                nameEl.textContent = proj.name || 'Untitled Project';
-                return;
-            }
-            if (newName !== proj.name) {
-                renameProject(proj.id, newName);
-                persistProjects();
-                proj.name = newName;
-                nameEl.title = newName;
-            }
-        });
-
-        nameEl.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter')  { e.preventDefault(); nameEl.blur(); }
-            if (e.key === 'Escape') { nameEl.textContent = proj.name; nameEl.blur(); }
-        });
-
-        // Prevent a single click on the name from switching projects
-        // while editing is active (mousedown fires before blur on click)
-        nameEl.addEventListener('mousedown', (e) => {
-            if (nameEl.contentEditable === 'true') e.stopPropagation();
-        });
-
-        const metaEl = document.createElement('div');
-        metaEl.className = 'sb-card-meta';
-        metaEl.innerHTML =
-            `<span class="sb-meta-item">🕐 ${dateStr}</span>` +
-            `<span class="sb-meta-item">📋 ${dutyCount} ${dutyCount === 1 ? 'duty' : 'duties'}</span>`;
-
-        const cardBody = document.createElement('div');
-        cardBody.className = 'sb-card-body';
-        cardBody.appendChild(nameEl);
-        cardBody.appendChild(metaEl);
-
+        // ── Delete button (×) ─────────────────────────────────
         const deleteBtn = document.createElement('button');
-        deleteBtn.type = 'button';
+        deleteBtn.type      = 'button';
         deleteBtn.className = 'sb-delete-btn';
-        deleteBtn.title = 'Delete project';
+        deleteBtn.title     = 'Delete project';
         deleteBtn.textContent = '×';
         deleteBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             window.pmDeleteProject(proj.id);
         });
 
+        // ── Actions column ────────────────────────────────────
         const cardActions = document.createElement('div');
         cardActions.className = 'sb-card-actions';
+        cardActions.appendChild(renameBtn);
         cardActions.appendChild(deleteBtn);
 
         card.appendChild(cardBody);
         card.appendChild(cardActions);
-
-        // Switch on card-body click (not delete button, not name when editing)
-        cardBody.addEventListener('click', () => {
-            if (nameEl.contentEditable === 'true') return;  // ignore click while editing
-            _switchToProject(proj.id);
-        });
         list.appendChild(card);
     });
 }

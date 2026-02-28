@@ -944,11 +944,42 @@ body.sb-sidebar-closed #appWrapper {
 .sb-card-actions {
   display: flex;
   align-items: center;
+  gap: 4px;
   padding: 0 7px 0 3px;
   opacity: 0;
   transition: opacity 0.18s;
 }
 .sb-project-card:hover .sb-card-actions { opacity: 1; }
+
+/* Rename button — neutral blue-grey, matches sidebar palette */
+.sb-rename-btn {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 4px;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.75;
+  transition: opacity 0.15s, background 0.15s, border-color 0.15s,
+              color 0.15s, transform 0.12s;
+}
+.sb-rename-btn:hover {
+  opacity: 1;
+  color: #e2e8f0;
+  background: rgba(148, 163, 184, 0.15);
+  border-color: #94a3b8;
+  transform: scale(1.1);
+  box-shadow: none;
+}
 
 .sb-delete-btn {
   width: 22px;
