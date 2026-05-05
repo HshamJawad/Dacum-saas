@@ -261,6 +261,11 @@ export const Renderer = {
     renderAll(state) {
         this.renderTableView(state);
         if (state.isCardView) this.renderCardView(state);
+        // Refresh wall view in place if it's currently visible
+        const wvEl = document.getElementById('wallViewContainer');
+        if (wvEl && wvEl.classList.contains('wv-visible')) {
+            this.renderWallView(state);
+        }
     },
 
     renderDuties(state) { this.renderTableView(state); },
@@ -397,8 +402,82 @@ export const Renderer = {
         });
     },
 
-    // ── CARD VIEW ──────────────────────────────────────────────
-    renderCardView(state) {
+    // ── WALL VIEW ──────────────────────────────────────────────
+    /**
+     * Renders the Wall View chart (full-screen overlay).
+     * Each duty = one horizontal row:  [Duty Card] [Task...Task...Task...]
+     * Tasks wrap naturally within the row. Zoom is applied via CSS zoom
+     * property in wallView.js so the render itself is zoom-agnostic.
+     */
+    renderWallView(state) {
+        const chart = document.getElementById('wvChart');
+        if (!chart) return;
+        chart.innerHTML = '';
+
+        if (!state.duties || state.duties.length === 0) {
+            chart.innerHTML =
+                '<p style="color:#64748b;font-style:italic;padding:24px 0;">No duties added yet. ' +
+                'Go to the Duties & Tasks tab to add duties.</p>';
+            return;
+        }
+
+        state.duties.forEach((duty, idx) => {
+            const letter = getDutyLetter(idx);
+
+            // ── Full duty row ──────────────────────────────────
+            const row = document.createElement('div');
+            row.className = 'wv-duty-row';
+
+            // ── Duty card (indigo) ─────────────────────────────
+            const dutyCard = document.createElement('div');
+            dutyCard.className = 'wv-duty-card';
+
+            const badge = document.createElement('div');
+            badge.className = 'wv-duty-badge';
+            badge.textContent = 'Duty ' + letter;
+
+            const title = document.createElement('div');
+            title.className = duty.title ? 'wv-duty-title' : 'wv-duty-title wv-duty-title-empty';
+            title.textContent = duty.title || '(No description)';
+
+            dutyCard.appendChild(badge);
+            dutyCard.appendChild(title);
+            row.appendChild(dutyCard);
+
+            // ── Tasks grid ─────────────────────────────────────
+            const grid = document.createElement('div');
+            grid.className = 'wv-tasks-grid';
+
+            if (duty.tasks.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'wv-no-tasks';
+                empty.textContent = 'No tasks yet.';
+                grid.appendChild(empty);
+            } else {
+                duty.tasks.forEach((task, tIdx) => {
+                    const card = document.createElement('div');
+                    card.className = 'wv-task-card';
+
+                    const lbl = document.createElement('div');
+                    lbl.className = 'wv-task-label';
+                    lbl.textContent = 'Task ' + letter + (tIdx + 1);
+
+                    const txt = document.createElement('div');
+                    txt.className = 'wv-task-text';
+                    txt.textContent = task.text || '';
+
+                    card.appendChild(lbl);
+                    card.appendChild(txt);
+                    grid.appendChild(card);
+                });
+            }
+
+            row.appendChild(grid);
+            chart.appendChild(row);
+        });
+    },
+
+    // ── CARD VIEW ──────────────────────────────────────────────    renderCardView(state) {
         const inner = document.getElementById('cardViewInner');
         if (!inner) return;
         inner.innerHTML = '';

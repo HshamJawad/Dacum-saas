@@ -109,6 +109,106 @@ export function clearDuty(dutyId) {
 
 export function cvAddDuty() { addDuty(); }
 
+// ── View helpers (used by wall view tab buttons) ─────────────
+export function showTableView() {
+    if (AppState.isCardView) toggleCardView();
+}
+export function showCardView() {
+    if (!AppState.isCardView) toggleCardView();
+}
+
+// ══════════════════════════════════════════════════════════════
+//  WALL VIEW  (v3.1)
+//  Full-screen overlay that mimics DACUM workshop wall cards.
+// ══════════════════════════════════════════════════════════════
+
+let _wallZoom = 100;   // current zoom level in percent (5% steps)
+
+/** Show the Wall View overlay and render the chart */
+export function showWallView() {
+    const container = document.getElementById('wallViewContainer');
+    if (!container) return;
+
+    // Render fresh from AppState
+    Renderer.renderWallView(StateManager.state);
+
+    // Reset zoom to 100%
+    _wallZoom = 100;
+    _applyWallZoom();
+
+    // Show overlay — body overflow hidden to prevent scroll bleed
+    container.classList.add('wv-visible');
+    document.body.style.overflow = 'hidden';
+}
+
+/** Hide the Wall View overlay */
+export function exitWallView() {
+    const container = document.getElementById('wallViewContainer');
+    if (!container) return;
+    container.classList.remove('wv-visible');
+    document.body.style.overflow = '';
+
+    // Exit fullscreen if active
+    if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+    }
+    // Reset fullscreen button label
+    const fsBtn = document.getElementById('wvFullscreenBtn');
+    if (fsBtn) fsBtn.textContent = '⛶ Fullscreen';
+}
+
+/**
+ * Adjust Wall View zoom by `delta` percent (positive = zoom in).
+ * Clamped to [25%, 200%], steps of 5%.
+ */
+export function wallViewZoom(delta) {
+    _wallZoom = Math.max(25, Math.min(200, _wallZoom + delta));
+    _applyWallZoom();
+}
+
+/** Reset Wall View zoom to 100% */
+export function resetWallZoom() {
+    _wallZoom = 100;
+    _applyWallZoom();
+}
+
+/** Apply the current zoom level to the chart element */
+function _applyWallZoom() {
+    const chart = document.getElementById('wvChart');
+    const label = document.getElementById('wvZoomLevel');
+    if (chart) chart.style.zoom = _wallZoom / 100;
+    if (label) label.textContent = _wallZoom + '%';
+}
+
+/** Print the Wall View chart (resets zoom to 75% for print fit) */
+export function printWallView() {
+    const chart = document.getElementById('wvChart');
+    const prevZoom = _wallZoom;
+    // Scale down slightly for better print fit across most printers
+    if (chart) chart.style.zoom = 0.70;
+    window.print();
+    // Restore after a short delay (print dialog is synchronous on most browsers)
+    setTimeout(() => {
+        if (chart) chart.style.zoom = prevZoom / 100;
+    }, 500);
+}
+
+/** Toggle browser fullscreen for the Wall View overlay */
+export function toggleWallFullscreen() {
+    const container = document.getElementById('wallViewContainer');
+    const btn       = document.getElementById('wvFullscreenBtn');
+    if (!container) return;
+
+    if (!document.fullscreenElement) {
+        container.requestFullscreen()
+            .then(() => { if (btn) btn.textContent = '⛶ Exit Fullscreen'; })
+            .catch(err => console.warn('[WallView] Fullscreen error:', err));
+    } else {
+        document.exitFullscreen()
+            .then(() => { if (btn) btn.textContent = '⛶ Fullscreen'; });
+    }
+}
+
 // ── Card / Table view toggle ──────────────────────────────────
 // Only shows/hides #cardViewContainer vs #tableViewArea.
 // The .tabs bar and sibling .tab-content panels are NEVER touched.
@@ -149,8 +249,7 @@ export function clearAll() {
     if (!confirm('Are you sure you want to clear ALL data? This cannot be undone!')) return;
 
     // Clear Chart Info fields
-    ['dacumDate', 'producedFor', 'producedBy', 'occupationTitle', 'jobTitle',
-     'scopeOfWork', 'facilitators', 'observers', 'panelMembers']
+    ['dacumDate', 'producedFor', 'producedBy', 'occupationTitle', 'jobTitle']
         .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
 
     // Clear images
@@ -539,14 +638,10 @@ export async function exportToWord() {
             const dateObj = new Date(dacumDateValue + 'T00:00:00');
             dacumDate = `${String(dateObj.getMonth()+1).padStart(2,'0')}/${String(dateObj.getDate()).padStart(2,'0')}/${dateObj.getFullYear()}`;
         }
-        const producedFor  = document.getElementById('producedFor').value;
-        const producedBy   = document.getElementById('producedBy').value;
+        const producedFor     = document.getElementById('producedFor').value;
+        const producedBy      = document.getElementById('producedBy').value;
         const occupationTitle = document.getElementById('occupationTitle').value;
         const jobTitle        = document.getElementById('jobTitle').value;
-        const scopeOfWork     = (document.getElementById('scopeOfWork')?.value  || '').trim();
-        const facilitators    = (document.getElementById('facilitators')?.value  || '').trim();
-        const observers       = (document.getElementById('observers')?.value     || '').trim();
-        const panelMembers    = (document.getElementById('panelMembers')?.value  || '').trim();
 
         if (!occupationTitle || !jobTitle) {
             showStatus('Please fill in at least the Occupation Title and Job Title', 'error');
@@ -582,35 +677,7 @@ export async function exportToWord() {
             children.push(new Paragraph({ spacing: { after: 200 } }));
         }
 
-        // ── Scope of Work ─────────────────────────────────────────
-        if (scopeOfWork) {
-            children.push(new Paragraph({ children: [new TextRun({ text: 'Scope of Work / Occupational Definition', bold: true, size: 26 })], spacing: { after: 120 }, bidirectional: false }));
-            children.push(new Paragraph({ children: [new TextRun({ text: scopeOfWork, size: 22 })], spacing: { after: 300 }, bidirectional: false }));
-        }
-
-        // ── Workshop Panel ────────────────────────────────────────
-        const _panelCols = [
-            { label: 'Facilitators', value: facilitators },
-            { label: 'Observers',    value: observers    },
-            { label: 'Panel Members', value: panelMembers },
-        ].filter(p => p.value);
-        if (_panelCols.length > 0) {
-            children.push(new Paragraph({ children: [new TextRun({ text: 'Workshop Panel', bold: true, size: 26 })], spacing: { after: 150 }, bidirectional: false }));
-            const _makeNameRuns = (text) => text.split('\n').filter(l => l.trim()).map(l =>
-                new Paragraph({ children: [new TextRun({ text: '• ' + l.trim(), size: 22 })], bidirectional: false })
-            );
-            const _panelRow = new TableRow({ children: _panelCols.map(col =>
-                new TableCell({
-                    children: [
-                        new Paragraph({ children: [new TextRun({ text: col.label, bold: true, size: 24 })], spacing: { after: 100 }, bidirectional: false }),
-                        ..._makeNameRuns(col.value)
-                    ],
-                    width: { size: Math.floor(100 / _panelCols.length), type: WidthType.PERCENTAGE }
-                })
-            )});
-            children.push(new Table({ width: { size: 9071, type: WidthType.DXA }, layout: 'fixed', rows: [_panelRow] }));
-            children.push(new Paragraph({ spacing: { after: 300 } }));
-        }
+        // Duties and tasks — read from central AppState (works in any view)
         children.push(new Paragraph({ children: [new PageBreak(), new TextRun({ text: 'Duties and Tasks', bold: true, size: 28 })], alignment: AlignmentType.CENTER, spacing: { after: 300 }, bidirectional: false }));
 
         const duties = AppState.duties.map(d => ({
@@ -719,10 +786,6 @@ export function exportToPDF() {
         const toolsInput            = document.getElementById('toolsInput');
         const trendsInput           = document.getElementById('trendsInput');
         const acronymsInput         = document.getElementById('acronymsInput');
-        const scopeOfWorkPdf        = (document.getElementById('scopeOfWork')?.value  || '').trim();
-        const facilitatorsPdf       = (document.getElementById('facilitators')?.value  || '').trim();
-        const observersPdf          = (document.getElementById('observers')?.value     || '').trim();
-        const panelMembersPdf       = (document.getElementById('panelMembers')?.value  || '').trim();
 
         let dacumDateFormatted = '';
         if (dacumDateInput.value) {
@@ -795,41 +858,6 @@ export function exportToPDF() {
         pdf.setFont(undefined, 'normal'); pdf.setFontSize(13);
         const jobLines = pdf.splitTextToSize(jobTitleInput.value, rightColW);
         pdf.text(jobLines, rightColX + 3, rightY);
-
-        // ── Scope of Work (below both columns) ───────────────────
-        let titlePageBottom = Math.max(leftY, rightY) + 10;
-        if (scopeOfWorkPdf) {
-            pdf.setFontSize(12); pdf.setFont(undefined, 'bold');
-            pdf.text('Scope of Work / Occupational Definition:', margin + 5, titlePageBottom);
-            titlePageBottom += 6;
-            pdf.setFontSize(11); pdf.setFont(undefined, 'normal');
-            const scopeLines = pdf.splitTextToSize(scopeOfWorkPdf, pageWidth - (margin * 2) - 10);
-            pdf.text(scopeLines, margin + 5, titlePageBottom);
-            titlePageBottom += scopeLines.length * 5 + 6;
-        }
-
-        // ── Workshop Panel (Facilitators / Observers / Panel Members) ─
-        const _pdfPanelCols = [
-            { label: 'Facilitators', value: facilitatorsPdf },
-            { label: 'Observers',    value: observersPdf    },
-            { label: 'Panel Members', value: panelMembersPdf },
-        ].filter(p => p.value);
-        if (_pdfPanelCols.length > 0) {
-            pdf.setFontSize(12); pdf.setFont(undefined, 'bold');
-            pdf.text('Workshop Panel:', margin + 5, titlePageBottom);
-            titlePageBottom += 7;
-            const colW = (pageWidth - (margin * 2) - 10) / _pdfPanelCols.length;
-            _pdfPanelCols.forEach((col, ci) => {
-                const cx = margin + 5 + ci * colW;
-                let cy = titlePageBottom;
-                pdf.setFontSize(11); pdf.setFont(undefined, 'bold');
-                pdf.text(col.label + ':', cx, cy); cy += 5.5;
-                pdf.setFont(undefined, 'normal'); pdf.setFontSize(10);
-                col.value.split('\n').filter(l => l.trim()).forEach(name => {
-                    pdf.text('• ' + name.trim(), cx + 2, cy); cy += 5;
-                });
-            });
-        }
 
         // ── DACUM chart grid ──────────────────────────────────────
         pdf.addPage('a4', 'landscape'); yPos = margin + 5;
