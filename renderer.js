@@ -1,5 +1,5 @@
 // ============================================================
-// renderer.js — DOM Rendering Layer  (DACUM Lite v3.1)
+// renderer.js — DOM Rendering Layer  (DACUM Lite v3.0.1)
 // ============================================================
 import { AppState, StateManager } from './state.js';
 import {
