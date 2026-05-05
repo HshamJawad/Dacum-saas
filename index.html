@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DACUM Chart Generator</title>
+    <title>DACUM Lite</title>
 
     <!-- ── External Libraries ───────────────────────────────── -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -13,6 +13,70 @@
     <link rel="stylesheet" href="./base.css">
     <link rel="stylesheet" href="./layout.css">
     <link rel="stylesheet" href="./components.css">
+
+    <!-- ── Drag-and-Drop Styles (v3.1) ──────────────────────── -->
+    <style>
+        /* Drag handles */
+        .duty-drag-handle {
+            cursor: grab;
+            color: #94a3b8;
+            font-size: 18px;
+            line-height: 1;
+            user-select: none;
+            flex-shrink: 0;
+            padding: 0 6px 0 0;
+            transition: color .15s;
+        }
+        .task-drag-handle {
+            cursor: grab;
+            color: #94a3b8;
+            font-size: 14px;
+            line-height: 1;
+            user-select: none;
+            flex-shrink: 0;
+            padding: 0 4px 0 0;
+            transition: color .15s;
+        }
+        .duty-drag-handle:hover, .task-drag-handle:hover { color: #6366f1; }
+        .duty-drag-handle:active, .task-drag-handle:active { cursor: grabbing; }
+
+        /* Ghost while dragging */
+        .duty-row.dragging,
+        .cv-duty-row.dragging  { opacity: .35; box-shadow: none; }
+        .task-item.dragging,
+        .cv-task-card.dragging { opacity: .35; }
+
+        /* ── Drop indicators ── */
+        /* Table view: duties */
+        .duty-row.drag-over-top    { border-top: 3px solid #6366f1 !important; }
+        .duty-row.drag-over-bottom { border-bottom: 3px solid #6366f1 !important; }
+
+        /* Table view: tasks */
+        .task-item.drag-over-top    { border-top: 3px solid #6366f1 !important; }
+        .task-item.drag-over-bottom { border-bottom: 3px solid #6366f1 !important; }
+
+        /* Card view: duty columns (left/right) */
+        .cv-duty-row.drag-over-top    { border-left:  4px solid #6366f1 !important; }
+        .cv-duty-row.drag-over-bottom { border-right: 4px solid #6366f1 !important; }
+
+        /* Card view: task cards */
+        .cv-task-card.drag-over-top    { border-top: 3px solid #6366f1 !important; }
+        .cv-task-card.drag-over-bottom { border-bottom: 3px solid #6366f1 !important; }
+
+        /* Empty task list drop zone */
+        .task-list.drag-over-empty,
+        .cv-tasks-wrapper.drag-over-empty {
+            background: rgba(99,102,241,.07);
+            outline: 2px dashed #6366f1;
+            outline-offset: -2px;
+            border-radius: 8px;
+            min-height: 48px;
+        }
+
+        /* Card view drag handle positioning */
+        .cv-duty-drag-handle { font-size: 16px; }
+        .cv-task-drag-handle { font-size: 13px; }
+    </style>
 
     <!-- ── App Bootstrap (ES Module) ────────────────────────── -->
     <script type="module" src="./app.js"></script>
@@ -71,7 +135,7 @@
      MAIN APP CONTAINER
      ══════════════════════════════════════════════════════════ -->
 <div class="container">
-    <h1>📊 DACUM Chart Generator</h1>
+    <h1>📊 DACUM Lite</h1>
 
     <!-- ══════════════════════════════════════════════════════
          TOP TOOLBAR (fixed)
@@ -398,7 +462,7 @@
 
     <!-- Copyright ────────────────────────────────────────── -->
     <div class="copyright">
-        <p class="copyright-main">© 2026 DACUM Chart Generator | by Husham Jawad Kadhim | Version 3.0 | All Rights Reserved</p>
+        <p class="copyright-main">© 2026 DACUM Lite | by Husham Jawad Kadhim | Version 3.1.0 | All Rights Reserved</p>
         <p class="copyright-disclaimer">
             <strong>Disclaimer:</strong> This tool is provided "as is" without warranty of any kind. The developer assumes no
             responsibility for any inaccuracies, errors, omissions, or inconsistencies in the generated documents.

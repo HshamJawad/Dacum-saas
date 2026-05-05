@@ -1,12 +1,15 @@
 // ============================================================
-// renderer.js — DOM Rendering Layer
+// renderer.js — DOM Rendering Layer  (DACUM Lite v3.1)
 // ============================================================
-import { StateManager } from './state.js';
+import { AppState, StateManager } from './state.js';
 import {
     pushCommand,
     makeEditDutyCmd,
-    makeEditTaskCmd
+    makeEditTaskCmd,
+    makeMoveDutyCmd,
+    makeMoveTaskCmd
 } from './history.js';
+import { saveToLocalStorage } from './storage.js';
 import {
     createCard,
     createHeader,
@@ -15,22 +18,234 @@ import {
     createButton
 } from './design-system.js';
 
-// ── Action callbacks injected by app.js (avoids circular dep) ─
+// ── Action callbacks injected by app.js ───────────────────────
 let _actions = {};
 export function setRendererActions(actions) { _actions = actions; }
+
+// ══════════════════════════════════════════════════════════════
+//  DACUM STANDARD NUMBERING  (v3.1)
+//  Duty A … Z … AA … | Task A1, A2 … B1, B2 …
+// ══════════════════════════════════════════════════════════════
+
+function getDutyLetter(idx) {
+    const L = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    if (idx < 26) return L[idx];
+    return L[Math.floor(idx / 26) - 1] + L[idx % 26];
+}
+
+function dutyLabel(idx)              { return 'Duty ' + getDutyLetter(idx); }
+function taskLabel(dutyIdx, taskIdx) { return getDutyLetter(dutyIdx) + (taskIdx + 1); }
+
+// ══════════════════════════════════════════════════════════════
+//  DRAG STATE  (module-level singleton)
+// ══════════════════════════════════════════════════════════════
+
+const _drag = { type: null, dutyId: null, taskId: null, el: null };
+
+function _resetDrag() { _drag.type = _drag.dutyId = _drag.taskId = _drag.el = null; }
+
+function _clearAllDragClasses() {
+    document.querySelectorAll('.drag-over-top,.drag-over-bottom,.drag-over-empty')
+        .forEach(el => el.classList.remove('drag-over-top', 'drag-over-bottom', 'drag-over-empty'));
+}
+
+// ══════════════════════════════════════════════════════════════
+//  DUTY DRAG-AND-DROP
+// ══════════════════════════════════════════════════════════════
+
+/**
+ * @param {HTMLElement} dutyEl  draggable wrapper (.duty-row / .cv-duty-row)
+ * @param {HTMLElement} handle  ⠿ grip element
+ * @param {object}      duty    duty data
+ * @param {'y'|'x'}     axis    'y' = table (vertical), 'x' = card (horizontal)
+ */
+function _attachDutyDragListeners(dutyEl, handle, duty, axis) {
+    handle.addEventListener('mousedown', () => { dutyEl.draggable = true; });
+
+    dutyEl.addEventListener('dragstart', (e) => {
+        if (!dutyEl.draggable) { e.preventDefault(); return; }
+        _drag.type = 'duty';
+        _drag.dutyId = duty.id;
+        _drag.el = dutyEl;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', duty.id);
+        setTimeout(() => dutyEl.classList.add('dragging'), 0);
+    });
+
+    dutyEl.addEventListener('dragend', () => {
+        dutyEl.draggable = false;
+        dutyEl.classList.remove('dragging');
+        _clearAllDragClasses();
+        _resetDrag();
+    });
+
+    dutyEl.addEventListener('dragover', (e) => {
+        if (_drag.type !== 'duty' || _drag.dutyId === duty.id) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        const rect = dutyEl.getBoundingClientRect();
+        const before = axis === 'x'
+            ? e.clientX < rect.left + rect.width  / 2
+            : e.clientY < rect.top  + rect.height / 2;
+        dutyEl.classList.remove('drag-over-top', 'drag-over-bottom');
+        dutyEl.classList.add(before ? 'drag-over-top' : 'drag-over-bottom');
+    });
+
+    dutyEl.addEventListener('dragleave', (e) => {
+        if (!dutyEl.contains(e.relatedTarget))
+            dutyEl.classList.remove('drag-over-top', 'drag-over-bottom');
+    });
+
+    dutyEl.addEventListener('drop', (e) => {
+        if (_drag.type !== 'duty' || _drag.dutyId === duty.id) return;
+        e.preventDefault();
+        dutyEl.classList.remove('drag-over-top', 'drag-over-bottom');
+
+        const fromIdx   = AppState.duties.findIndex(d => d.id === _drag.dutyId);
+        const targetIdx = AppState.duties.findIndex(d => d.id === duty.id);
+        if (fromIdx === -1 || targetIdx === -1) return;
+
+        const rect = dutyEl.getBoundingClientRect();
+        const before = axis === 'x'
+            ? e.clientX < rect.left + rect.width  / 2
+            : e.clientY < rect.top  + rect.height / 2;
+
+        const insertIdx = before ? targetIdx : targetIdx + 1;
+        const finalIdx  = fromIdx < insertIdx ? insertIdx - 1 : insertIdx;
+        if (fromIdx === finalIdx) return;
+
+        const cmd = makeMoveDutyCmd(fromIdx, finalIdx);
+        cmd.execute();
+        pushCommand(cmd);
+        saveToLocalStorage();
+        Renderer.renderAll(StateManager.state);
+    });
+}
+
+// ══════════════════════════════════════════════════════════════
+//  TASK DRAG-AND-DROP
+// ══════════════════════════════════════════════════════════════
+
+function _attachTaskDragListeners(taskEl, handle, dutyRef, taskRef) {
+    handle.addEventListener('mousedown', () => { taskEl.draggable = true; });
+
+    taskEl.addEventListener('dragstart', (e) => {
+        if (!taskEl.draggable) { e.preventDefault(); return; }
+        _drag.type   = 'task';
+        _drag.dutyId = dutyRef.id;
+        _drag.taskId = taskRef.id;
+        _drag.el     = taskEl;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', taskRef.id);
+        e.stopPropagation();
+        setTimeout(() => taskEl.classList.add('dragging'), 0);
+    });
+
+    taskEl.addEventListener('dragend', () => {
+        taskEl.draggable = false;
+        taskEl.classList.remove('dragging');
+        _clearAllDragClasses();
+        _resetDrag();
+    });
+
+    taskEl.addEventListener('dragover', (e) => {
+        if (_drag.type !== 'task') return;
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = 'move';
+        const rect = taskEl.getBoundingClientRect();
+        taskEl.classList.remove('drag-over-top', 'drag-over-bottom');
+        taskEl.classList.add(e.clientY < rect.top + rect.height / 2 ? 'drag-over-top' : 'drag-over-bottom');
+    });
+
+    taskEl.addEventListener('dragleave', (e) => {
+        if (!taskEl.contains(e.relatedTarget))
+            taskEl.classList.remove('drag-over-top', 'drag-over-bottom');
+    });
+
+    taskEl.addEventListener('drop', (e) => {
+        if (_drag.type !== 'task') return;
+        e.preventDefault();
+        e.stopPropagation();
+        taskEl.classList.remove('drag-over-top', 'drag-over-bottom');
+
+        const srcDuty = AppState.duties.find(d => d.id === _drag.dutyId);
+        const tgtDuty = AppState.duties.find(d => d.id === dutyRef.id);
+        if (!srcDuty || !tgtDuty) return;
+
+        const fromTaskIdx   = srcDuty.tasks.findIndex(t => t.id === _drag.taskId);
+        const targetTaskIdx = tgtDuty.tasks.findIndex(t => t.id === taskRef.id);
+        if (fromTaskIdx === -1 || targetTaskIdx === -1) return;
+
+        const rect = taskEl.getBoundingClientRect();
+        const insertBefore = e.clientY < rect.top + rect.height / 2;
+        const toInsertIdx  = insertBefore ? targetTaskIdx : targetTaskIdx + 1;
+
+        const sameList       = _drag.dutyId === dutyRef.id;
+        const finalInsertIdx = (sameList && fromTaskIdx < toInsertIdx) ? toInsertIdx - 1 : toInsertIdx;
+        if (sameList && fromTaskIdx === finalInsertIdx) return;
+
+        const cmd = makeMoveTaskCmd(_drag.taskId, _drag.dutyId, fromTaskIdx, dutyRef.id, toInsertIdx);
+        cmd.execute();
+        pushCommand(cmd);
+        saveToLocalStorage();
+        Renderer.renderAll(StateManager.state);
+    });
+}
+
+/** Drop zone for empty task lists or end-of-list drops */
+function _attachTaskListDropZone(listEl, dutyRef) {
+    listEl.addEventListener('dragover', (e) => {
+        if (_drag.type !== 'task') return;
+        if (e.target !== listEl && listEl.contains(e.target) && !e.target.classList.contains('cv-empty-note')) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        listEl.classList.add('drag-over-empty');
+    });
+
+    listEl.addEventListener('dragleave', (e) => {
+        if (!listEl.contains(e.relatedTarget))
+            listEl.classList.remove('drag-over-empty');
+    });
+
+    listEl.addEventListener('drop', (e) => {
+        if (_drag.type !== 'task') return;
+        if (e.target !== listEl &&
+            listEl.contains(e.target) &&
+            !e.target.classList.contains('cv-empty-note') &&
+            !e.target.classList.contains('drag-over-empty')) return;
+        e.preventDefault();
+        listEl.classList.remove('drag-over-empty');
+
+        const srcDuty = AppState.duties.find(d => d.id === _drag.dutyId);
+        const tgtDuty = AppState.duties.find(d => d.id === dutyRef.id);
+        if (!srcDuty || !tgtDuty) return;
+
+        const fromTaskIdx = srcDuty.tasks.findIndex(t => t.id === _drag.taskId);
+        if (fromTaskIdx === -1) return;
+
+        const toInsertIdx = tgtDuty.tasks.length;
+        const sameList    = _drag.dutyId === dutyRef.id;
+        if (sameList && fromTaskIdx === tgtDuty.tasks.length - 1) return;
+
+        const cmd = makeMoveTaskCmd(_drag.taskId, _drag.dutyId, fromTaskIdx, dutyRef.id, toInsertIdx);
+        cmd.execute();
+        pushCommand(cmd);
+        saveToLocalStorage();
+        Renderer.renderAll(StateManager.state);
+    });
+}
 
 // ══════════════════════════════════════════════════════════════
 //  Renderer — public API
 // ══════════════════════════════════════════════════════════════
 export const Renderer = {
 
-    /** Entry point — call after every state change */
     renderAll(state) {
         this.renderTableView(state);
         if (state.isCardView) this.renderCardView(state);
     },
 
-    /** Alias per spec naming */
     renderDuties(state) { this.renderTableView(state); },
 
     // ── TABLE VIEW ─────────────────────────────────────────────
@@ -40,7 +255,6 @@ export const Renderer = {
         container.innerHTML = '';
 
         state.duties.forEach((duty, idx) => {
-            const dutyNum = idx + 1;
             const dutyDiv = document.createElement('div');
             dutyDiv.className = 'duty-row';
             dutyDiv.id = duty.id;
@@ -49,26 +263,26 @@ export const Renderer = {
             const header = document.createElement('div');
             header.className = 'duty-header';
 
+            const dragHandle = document.createElement('span');
+            dragHandle.className = 'duty-drag-handle';
+            dragHandle.textContent = '⠿';
+            dragHandle.title = 'Drag to reorder duties';
+
             const heading = document.createElement('h4');
-            heading.textContent = 'Duty ' + dutyNum;
+            heading.textContent = dutyLabel(idx);  // "Duty A"
 
             const actions = document.createElement('div');
             actions.className = 'duty-header-actions';
-            actions.appendChild(
-                createButton({
-                    type: 'clear-section',
-                    label: '🗑️ Clear',
-                    onClick: () => _actions.clearDuty && _actions.clearDuty(duty.id)
-                })
-            );
-            actions.appendChild(
-                createButton({
-                    type: 'remove',
-                    label: '🗑️ Remove Duty',
-                    onClick: () => _actions.removeDuty && _actions.removeDuty(duty.id)
-                })
-            );
+            actions.appendChild(createButton({
+                type: 'clear-section', label: '🗑️ Clear',
+                onClick: () => _actions.clearDuty && _actions.clearDuty(duty.id)
+            }));
+            actions.appendChild(createButton({
+                type: 'remove', label: '🗑️ Remove Duty',
+                onClick: () => _actions.removeDuty && _actions.removeDuty(duty.id)
+            }));
 
+            header.appendChild(dragHandle);
             header.appendChild(heading);
             header.appendChild(actions);
             dutyDiv.appendChild(header);
@@ -100,32 +314,35 @@ export const Renderer = {
             taskList.className = 'task-list';
             taskList.id = 'tasks_' + duty.id;
 
-            this.renderTasks(duty, taskList);
+            this.renderTasks(duty, taskList, idx);
+            _attachTaskListDropZone(taskList, duty);
             dutyDiv.appendChild(taskList);
 
             // Add Task button
-            dutyDiv.appendChild(
-                createButton({
-                    type: 'add',
-                    label: '➕ Add Task',
-                    onClick: () => _actions.addTask && _actions.addTask(duty.id)
-                })
-            );
+            dutyDiv.appendChild(createButton({
+                type: 'add', label: '➕ Add Task',
+                onClick: () => _actions.addTask && _actions.addTask(duty.id)
+            }));
 
             container.appendChild(dutyDiv);
+            _attachDutyDragListeners(dutyDiv, dragHandle, duty, 'y');
         });
     },
 
-    /** Render tasks into a task-list container (table view) */
-    renderTasks(duty, taskList) {
+    renderTasks(duty, taskList, dutyIdx) {
         duty.tasks.forEach((task, tIdx) => {
             const taskDiv = document.createElement('div');
             taskDiv.className = 'task-item';
             taskDiv.id = task.id;
 
-            const taskLabel = document.createElement('span');
-            taskLabel.className = 'task-label';
-            taskLabel.textContent = 'Task ' + (tIdx + 1) + ':';
+            const dragHandle = document.createElement('span');
+            dragHandle.className = 'task-drag-handle';
+            dragHandle.textContent = '⠿';
+            dragHandle.title = 'Drag to reorder or move to another duty';
+
+            const label = document.createElement('span');
+            label.className = 'task-label';
+            label.textContent = taskLabel(dutyIdx, tIdx) + ':';  // "A1:"
 
             const taskInput = document.createElement('input');
             taskInput.type = 'text';
@@ -148,15 +365,17 @@ export const Renderer = {
             })(duty, task);
 
             const removeBtn = createButton({
-                type: 'remove',
-                label: '🗑️',
+                type: 'remove', label: '🗑️',
                 onClick: () => _actions.removeTask && _actions.removeTask(task.id)
             });
 
-            taskDiv.appendChild(taskLabel);
+            taskDiv.appendChild(dragHandle);
+            taskDiv.appendChild(label);
             taskDiv.appendChild(taskInput);
             taskDiv.appendChild(removeBtn);
             taskList.appendChild(taskDiv);
+
+            _attachTaskDragListeners(taskDiv, dragHandle, duty, task);
         });
     },
 
@@ -172,26 +391,33 @@ export const Renderer = {
         }
 
         state.duties.forEach((duty, idx) => {
-            // ── Outer scrollable row ──
+            const letter = getDutyLetter(idx);
+
+            // Full duty column
             const row = document.createElement('div');
             row.className = 'cv-duty-row';
 
-            // ── Duty sticky card ──
-            const dutyIndexLabel = createHeader({ type: 'duty', index: idx + 1 });
+            // Duty card (sticky left panel)
+            const dutyDragHandle = document.createElement('span');
+            dutyDragHandle.className = 'duty-drag-handle cv-duty-drag-handle';
+            dutyDragHandle.textContent = '⠿';
+            dutyDragHandle.title = 'Drag to reorder duties';
+
+            const dutyIndexLabel = createHeader({ type: 'duty', index: letter });
 
             const deleteDutyBtn = createDeleteCircle({
                 type: 'duty',
                 title: 'Remove duty',
                 onClick(e) {
                     e.stopPropagation();
-                    if (confirm('Remove this duty and all its tasks?')) {
+                    if (confirm('Remove this duty and all its tasks?'))
                         _actions.removeDuty && _actions.removeDuty(duty.id);
-                    }
                 }
             });
 
             const topRow = document.createElement('div');
             topRow.className = 'cv-duty-card-top';
+            topRow.appendChild(dutyDragHandle);
             topRow.appendChild(dutyIndexLabel);
             topRow.appendChild(deleteDutyBtn);
 
@@ -203,9 +429,8 @@ export const Renderer = {
                 onInput:  () => { duty.title = dutyTextEl.textContent; },
                 onBlur:   () => {
                     const newVal = duty.title;
-                    if (newVal !== dutyTextEl._prev) {
+                    if (newVal !== dutyTextEl._prev)
                         pushCommand(makeEditDutyCmd(duty.id, dutyTextEl._prev, newVal));
-                    }
                 }
             });
 
@@ -215,7 +440,7 @@ export const Renderer = {
             dutyCard.appendChild(dutyTextEl);
             row.appendChild(dutyCard);
 
-            // ── Tasks wrapper ──
+            // Tasks wrapper
             const tasksWrapper = document.createElement('div');
             tasksWrapper.className = 'cv-tasks-wrapper';
 
@@ -226,9 +451,14 @@ export const Renderer = {
                 tasksWrapper.appendChild(empty);
             } else {
                 duty.tasks.forEach((task, tIdx) => {
-                    const taskLabel = document.createElement('div');
-                    taskLabel.className = 'cv-task-label';
-                    taskLabel.textContent = 'Task ' + (tIdx + 1);
+                    const taskDragHandle = document.createElement('span');
+                    taskDragHandle.className = 'task-drag-handle cv-task-drag-handle';
+                    taskDragHandle.textContent = '⠿';
+                    taskDragHandle.title = 'Drag to reorder or move task';
+
+                    const labelEl = document.createElement('div');
+                    labelEl.className = 'cv-task-label';
+                    labelEl.textContent = taskLabel(idx, tIdx);  // "A1"
 
                     const deleteTaskBtn = createDeleteCircle({
                         type: 'task',
@@ -247,24 +477,31 @@ export const Renderer = {
                         onInput:  () => { task.text = taskTextEl.textContent; },
                         onBlur:   () => {
                             const newVal = task.text;
-                            if (newVal !== taskTextEl._prev) {
+                            if (newVal !== taskTextEl._prev)
                                 pushCommand(makeEditTaskCmd(duty.id, task.id, taskTextEl._prev, newVal));
-                            }
                         }
                     });
 
+                    // Top-left: handle + label combined
+                    const topLeftEl = document.createElement('div');
+                    topLeftEl.style.cssText = 'display:flex;align-items:center;gap:4px;';
+                    topLeftEl.appendChild(taskDragHandle);
+                    topLeftEl.appendChild(labelEl);
+
                     const taskCard = createCard({
                         type: 'task',
-                        topLeft: taskLabel,
+                        topLeft: topLeftEl,
                         topRight: deleteTaskBtn,
                         content: taskTextEl
                     });
 
                     tasksWrapper.appendChild(taskCard);
+                    _attachTaskDragListeners(taskCard, taskDragHandle, duty, task);
                 });
             }
 
-            // Add Task button
+            _attachTaskListDropZone(tasksWrapper, duty);
+
             const addTaskBtn = document.createElement('button');
             addTaskBtn.className = 'cv-add-task';
             addTaskBtn.innerHTML = '➕ Task';
@@ -274,11 +511,14 @@ export const Renderer = {
 
             row.appendChild(tasksWrapper);
             inner.appendChild(row);
+
+            // Card view duty drag = horizontal axis
+            _attachDutyDragListeners(row, dutyDragHandle, duty, 'x');
         });
     }
 };
 
-// ── Backward-compat shims for legacy inline onclick= handlers ─
+// ── Backward-compat shims ─────────────────────────────────────
 export function renderApp()       { Renderer.renderAll(StateManager.state); }
 export function renderTableView() { Renderer.renderTableView(StateManager.state); }
 export function renderCardView()  { Renderer.renderCardView(StateManager.state); }

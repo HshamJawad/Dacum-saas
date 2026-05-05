@@ -1,9 +1,7 @@
-const APP_VERSION = "3.0.0";
 // ============================================================
-// app.js — Application Bootstrap
-// Connects all modules, initialises project manager, renders
-// the sidebar, and bootstraps the app on DOMContentLoaded.
+// app.js — Application Bootstrap  (DACUM Lite v3.1)
 // ============================================================
+import { VERSION } from './version.js';
 import { AppState, StateManager, applyProjectState, extractProjectState } from './state.js';
 import { showStatus }                                                       from './design-system.js';
 import {
@@ -35,11 +33,11 @@ import {
 } from './project-manager.js';
 
 // ── Wire cross-module render reference ────────────────────────
-// Extended to sync card/table DOM visibility so that undo, redo,
-// and snapshot restore all land in the correct visual state.
+// Sync card/table DOM visibility before painting content.
+// Also logs the active version to console on first render.
 setHistoryRender(state => {
-    _applyCardViewDOM(state.isCardView);   // sync containers first
-    Renderer.renderAll(state);             // then paint content
+    _applyCardViewDOM(state.isCardView);
+    Renderer.renderAll(state);
 });
 
 // ── Wire action callbacks into Renderer ───────────────────────
@@ -385,6 +383,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // ── 1. Load project store ──────────────────────────────────
     loadProjects();
+
+    // ── 1b. Log version to console ────────────────────────────
+    console.info(`%c ${VERSION.display} `, 'background:#6366f1;color:#fff;font-weight:bold;border-radius:4px;padding:2px 6px;');
 
     // ── 2. Apply active project to live state ──────────────────
     _loadProjectIntoUI(getActiveProject());

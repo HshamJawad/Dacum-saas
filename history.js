@@ -199,13 +199,77 @@ export function makeClearAllCmd(priorDuties, priorDutyCount, priorTaskCounts) {
 }
 
 // ══════════════════════════════════════════════════════════════
-//  SNAPSHOT VERSIONING
-//  Single source of truth: AppState.snapshots
-//  SnapshotManager is kept as a thin alias so any external code
-//  that references it continues to work unchanged.
+//  DRAG-AND-DROP COMMANDS  (v3.1)
 // ══════════════════════════════════════════════════════════════
 
-// Alias — delegates to AppState.snapshots so there is only one array.
+/**
+ * MOVE_DUTY — reorders a duty row.
+ *
+ * @param {number} fromIdx  - current position in AppState.duties
+ * @param {number} finalIdx - desired position AFTER the item has been removed
+ *
+ * Computing finalIdx (call this before creating the command):
+ *   const insertIdx    = insertBefore ? targetIdx : targetIdx + 1;
+ *   const finalIdx     = fromIdx < insertIdx ? insertIdx - 1 : insertIdx;
+ */
+export function makeMoveDutyCmd(fromIdx, finalIdx) {
+    return {
+        type: 'MOVE_DUTY',
+        payload: { fromIdx, finalIdx },
+        execute() {
+            const [item] = AppState.duties.splice(fromIdx, 1);
+            AppState.duties.splice(finalIdx, 0, item);
+        },
+        undo() {
+            const [item] = AppState.duties.splice(finalIdx, 1);
+            AppState.duties.splice(fromIdx, 0, item);
+        }
+    };
+}
+
+/**
+ * MOVE_TASK — moves a task within the same duty or across duties.
+ *
+ * @param {string} taskId       - id of the task to move
+ * @param {string} fromDutyId   - source duty id
+ * @param {number} fromTaskIdx  - source index within source duty
+ * @param {string} toDutyId     - target duty id (may equal fromDutyId)
+ * @param {number} toInsertIdx  - raw insertion index in the TARGET duty
+ *                                (before any adjustment for same-list removal)
+ */
+export function makeMoveTaskCmd(taskId, fromDutyId, fromTaskIdx, toDutyId, toInsertIdx) {
+    const sameList = fromDutyId === toDutyId;
+    // When moving within the same list, removing the item from a lower index
+    // shifts all higher indices down by 1.
+    const finalInsertIdx = (sameList && fromTaskIdx < toInsertIdx)
+        ? toInsertIdx - 1
+        : toInsertIdx;
+
+    return {
+        type: 'MOVE_TASK',
+        payload: { taskId, fromDutyId, fromTaskIdx, toDutyId, toInsertIdx, finalInsertIdx },
+        execute() {
+            const srcDuty = AppState.duties.find(d => d.id === fromDutyId);
+            const tgtDuty = AppState.duties.find(d => d.id === toDutyId);
+            if (!srcDuty || !tgtDuty) return;
+            const [task] = srcDuty.tasks.splice(fromTaskIdx, 1);
+            tgtDuty.tasks.splice(finalInsertIdx, 0, task);
+        },
+        undo() {
+            const srcDuty = AppState.duties.find(d => d.id === fromDutyId);
+            const tgtDuty = AppState.duties.find(d => d.id === toDutyId);
+            if (!srcDuty || !tgtDuty) return;
+            const [task] = tgtDuty.tasks.splice(finalInsertIdx, 1);
+            srcDuty.tasks.splice(fromTaskIdx, 0, task);
+        }
+    };
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SNAPSHOT VERSIONING
+//  Single source of truth: AppState.snapshots
+// ══════════════════════════════════════════════════════════════
+
 export const SnapshotManager = {
     get snapshots() { return AppState.snapshots; },
     set snapshots(v) { AppState.snapshots = v; }
@@ -218,10 +282,7 @@ export function createSnapshot(label) {
         timestamp: new Date().toISOString(),
         state: deepClone(AppState)
     });
-    // Cap at 20 most-recent snapshots
     if (AppState.snapshots.length > 20) AppState.snapshots.shift();
-    // Persist immediately so snapshots survive page reloads and
-    // project switches — this was the primary data-loss bug.
     saveToLocalStorage();
     refreshSnapshotList();
     showStatus('Snapshot saved: "' + label + '" ✓', 'success');
@@ -232,9 +293,6 @@ export function restoreSnapshot(index) {
     if (!snap) return;
 
     const prior = deepClone(AppState);
-    // Preserve live view mode and snapshot list across the restore.
-    // The snapshot's own isCardView / snapshots must NOT overwrite
-    // the current session state.
     const currentIsCardView = AppState.isCardView;
     const currentSnapshots  = deepClone(AppState.snapshots);
 
@@ -243,15 +301,15 @@ export function restoreSnapshot(index) {
         payload: { label: snap.label },
         execute() {
             Object.assign(AppState, deepClone(snap.state));
-            AppState.isCardView = currentIsCardView;  // keep live view mode
-            AppState.snapshots  = currentSnapshots;   // keep live snapshot list
+            AppState.isCardView = currentIsCardView;
+            AppState.snapshots  = currentSnapshots;
         },
         undo() { Object.assign(AppState, prior); }
     };
     cmd.execute();
     pushCommand(cmd);
-    saveToLocalStorage();          // persist restored state immediately
-    refreshSnapshotList();         // re-render list (requirement 5)
+    saveToLocalStorage();
+    refreshSnapshotList();
     if (_renderFn) _renderFn(StateManager.state);
     showStatus('Snapshot restored: "' + snap.label + '" ✓', 'success');
 }
@@ -265,7 +323,6 @@ export function promptSnapshot() {
 export function refreshSnapshotList() {
     const list = document.getElementById('snapshotList');
     if (!list) return;
-    // Always read from AppState.snapshots — the single source of truth.
     const snaps = AppState.snapshots;
     if (!snaps || snaps.length === 0) {
         list.innerHTML = '<div class="snap-empty">No snapshots yet. Click 📸 to save one.</div>';
@@ -296,7 +353,7 @@ export function toggleSnapshotPanel() {
     const panel = document.getElementById('snapshotPanel');
     if (!panel) return;
     if (panel.style.display === 'none' || panel.style.display === '') {
-        refreshSnapshotList();         // always re-render before showing
+        refreshSnapshotList();
         panel.style.display = 'block';
     } else {
         panel.style.display = 'none';
@@ -306,7 +363,7 @@ export function toggleSnapshotPanel() {
 
 // ── Debug console inspector ───────────────────────────────────
 export function openStateInspector() {
-    console.group('%c DACUM Command Inspector', 'color:#667eea;font-weight:bold;font-size:14px');
+    console.group('%c DACUM Lite — State Inspector', 'color:#667eea;font-weight:bold;font-size:14px');
     console.log('%cAppState', 'color:#10b981;font-weight:bold', deepClone(StateManager.state));
     console.log('%cUndo Stack (' + StateManager.undoStack.length + ')', 'color:#f59e0b;font-weight:bold',
         StateManager.undoStack.map(c => c.type));
