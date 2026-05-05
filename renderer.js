@@ -51,22 +51,30 @@ function _clearAllDragClasses() {
 
 // ══════════════════════════════════════════════════════════════
 //  DUTY DRAG-AND-DROP
+//
+//  KEY FIX (v3.1.1):
+//  Instead of splitting by mouse position within the target
+//  (which caused no-op bugs when dragging top→bottom), we use
+//  the DRAG DIRECTION to decide insert-before vs insert-after:
+//    • Dragging DOWN  (fromIdx < targetIdx) → insert AFTER target
+//    • Dragging UP    (fromIdx > targetIdx) → insert BEFORE target
+//  This is unambiguous and matches user expectations.
 // ══════════════════════════════════════════════════════════════
 
 /**
- * @param {HTMLElement} dutyEl  draggable wrapper (.duty-row / .cv-duty-row)
- * @param {HTMLElement} handle  ⠿ grip element
- * @param {object}      duty    duty data
- * @param {'y'|'x'}     axis    'y' = table (vertical), 'x' = card (horizontal)
+ * @param {HTMLElement} dutyEl  draggable container (.duty-row / .cv-duty-row)
+ * @param {HTMLElement} handle  ⠿ grip element — mousedown enables dragging
+ * @param {object}      duty    duty data object
+ * @param {'y'|'x'}    axis    'y' = table view, 'x' = card view
  */
 function _attachDutyDragListeners(dutyEl, handle, duty, axis) {
     handle.addEventListener('mousedown', () => { dutyEl.draggable = true; });
 
     dutyEl.addEventListener('dragstart', (e) => {
         if (!dutyEl.draggable) { e.preventDefault(); return; }
-        _drag.type = 'duty';
+        _drag.type   = 'duty';
         _drag.dutyId = duty.id;
-        _drag.el = dutyEl;
+        _drag.el     = dutyEl;
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', duty.id);
         setTimeout(() => dutyEl.classList.add('dragging'), 0);
@@ -83,12 +91,16 @@ function _attachDutyDragListeners(dutyEl, handle, duty, axis) {
         if (_drag.type !== 'duty' || _drag.dutyId === duty.id) return;
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
-        const rect = dutyEl.getBoundingClientRect();
-        const before = axis === 'x'
-            ? e.clientX < rect.left + rect.width  / 2
-            : e.clientY < rect.top  + rect.height / 2;
+
+        // Use drag direction, not cursor position within element.
+        const fromIdx   = AppState.duties.findIndex(d => d.id === _drag.dutyId);
+        const targetIdx = AppState.duties.findIndex(d => d.id === duty.id);
+        // Dragging down → will insert AFTER (show bottom indicator)
+        // Dragging up   → will insert BEFORE (show top indicator)
+        const insertBefore = fromIdx > targetIdx;
+
         dutyEl.classList.remove('drag-over-top', 'drag-over-bottom');
-        dutyEl.classList.add(before ? 'drag-over-top' : 'drag-over-bottom');
+        dutyEl.classList.add(insertBefore ? 'drag-over-top' : 'drag-over-bottom');
     });
 
     dutyEl.addEventListener('dragleave', (e) => {
@@ -105,14 +117,15 @@ function _attachDutyDragListeners(dutyEl, handle, duty, axis) {
         const targetIdx = AppState.duties.findIndex(d => d.id === duty.id);
         if (fromIdx === -1 || targetIdx === -1) return;
 
-        const rect = dutyEl.getBoundingClientRect();
-        const before = axis === 'x'
-            ? e.clientX < rect.left + rect.width  / 2
-            : e.clientY < rect.top  + rect.height / 2;
+        // Same directional rule as dragover:
+        //   dragging down → insertIdx = targetIdx + 1
+        //   dragging up   → insertIdx = targetIdx
+        const insertBefore = fromIdx > targetIdx;
+        const insertIdx    = insertBefore ? targetIdx : targetIdx + 1;
+        // After splicing out fromIdx, every index ≥ fromIdx shifts down by 1
+        const finalIdx     = fromIdx < insertIdx ? insertIdx - 1 : insertIdx;
 
-        const insertIdx = before ? targetIdx : targetIdx + 1;
-        const finalIdx  = fromIdx < insertIdx ? insertIdx - 1 : insertIdx;
-        if (fromIdx === finalIdx) return;
+        if (fromIdx === finalIdx) return;   // guard (shouldn't happen now)
 
         const cmd = makeMoveDutyCmd(fromIdx, finalIdx);
         cmd.execute();
@@ -124,6 +137,8 @@ function _attachDutyDragListeners(dutyEl, handle, duty, axis) {
 
 // ══════════════════════════════════════════════════════════════
 //  TASK DRAG-AND-DROP
+//  Tasks use cursor position (top/bottom half) because tasks are
+//  small and the direction is always clear within a short list.
 // ══════════════════════════════════════════════════════════════
 
 function _attachTaskDragListeners(taskEl, handle, dutyRef, taskRef) {
@@ -137,7 +152,7 @@ function _attachTaskDragListeners(taskEl, handle, dutyRef, taskRef) {
         _drag.el     = taskEl;
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', taskRef.id);
-        e.stopPropagation();
+        e.stopPropagation();    // don't bubble to duty dragstart
         setTimeout(() => taskEl.classList.add('dragging'), 0);
     });
 
@@ -177,7 +192,7 @@ function _attachTaskDragListeners(taskEl, handle, dutyRef, taskRef) {
         const targetTaskIdx = tgtDuty.tasks.findIndex(t => t.id === taskRef.id);
         if (fromTaskIdx === -1 || targetTaskIdx === -1) return;
 
-        const rect = taskEl.getBoundingClientRect();
+        const rect         = taskEl.getBoundingClientRect();
         const insertBefore = e.clientY < rect.top + rect.height / 2;
         const toInsertIdx  = insertBefore ? targetTaskIdx : targetTaskIdx + 1;
 
@@ -197,7 +212,9 @@ function _attachTaskDragListeners(taskEl, handle, dutyRef, taskRef) {
 function _attachTaskListDropZone(listEl, dutyRef) {
     listEl.addEventListener('dragover', (e) => {
         if (_drag.type !== 'task') return;
-        if (e.target !== listEl && listEl.contains(e.target) && !e.target.classList.contains('cv-empty-note')) return;
+        if (e.target !== listEl &&
+            listEl.contains(e.target) &&
+            !e.target.classList.contains('cv-empty-note')) return;
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
         listEl.classList.add('drag-over-empty');
@@ -269,7 +286,7 @@ export const Renderer = {
             dragHandle.title = 'Drag to reorder duties';
 
             const heading = document.createElement('h4');
-            heading.textContent = dutyLabel(idx);  // "Duty A"
+            heading.textContent = dutyLabel(idx);   // "Duty A", "Duty B" …
 
             const actions = document.createElement('div');
             actions.className = 'duty-header-actions';
@@ -287,7 +304,7 @@ export const Renderer = {
             header.appendChild(actions);
             dutyDiv.appendChild(header);
 
-            // Duty input
+            // Duty description input
             const dutyInput = document.createElement('input');
             dutyInput.type = 'text';
             dutyInput.placeholder = 'Enter duty description';
@@ -325,6 +342,7 @@ export const Renderer = {
             }));
 
             container.appendChild(dutyDiv);
+            // Attach duty DnD — vertical axis for table view
             _attachDutyDragListeners(dutyDiv, dragHandle, duty, 'y');
         });
     },
@@ -342,7 +360,7 @@ export const Renderer = {
 
             const label = document.createElement('span');
             label.className = 'task-label';
-            label.textContent = taskLabel(dutyIdx, tIdx) + ':';  // "A1:"
+            label.textContent = taskLabel(dutyIdx, tIdx) + ':';   // "A1:", "B3:"…
 
             const taskInput = document.createElement('input');
             taskInput.type = 'text';
@@ -393,11 +411,10 @@ export const Renderer = {
         state.duties.forEach((duty, idx) => {
             const letter = getDutyLetter(idx);
 
-            // Full duty column
             const row = document.createElement('div');
             row.className = 'cv-duty-row';
 
-            // Duty card (sticky left panel)
+            // Duty card (sticky side panel)
             const dutyDragHandle = document.createElement('span');
             dutyDragHandle.className = 'duty-drag-handle cv-duty-drag-handle';
             dutyDragHandle.textContent = '⠿';
@@ -406,8 +423,7 @@ export const Renderer = {
             const dutyIndexLabel = createHeader({ type: 'duty', index: letter });
 
             const deleteDutyBtn = createDeleteCircle({
-                type: 'duty',
-                title: 'Remove duty',
+                type: 'duty', title: 'Remove duty',
                 onClick(e) {
                     e.stopPropagation();
                     if (confirm('Remove this duty and all its tasks?'))
@@ -422,12 +438,10 @@ export const Renderer = {
             topRow.appendChild(deleteDutyBtn);
 
             const dutyTextEl = createEditable({
-                className: 'cv-duty-text',
-                text: duty.title,
-                placeholder: 'Enter duty',
-                onFocus:  () => { dutyTextEl._prev = duty.title; },
-                onInput:  () => { duty.title = dutyTextEl.textContent; },
-                onBlur:   () => {
+                className: 'cv-duty-text', text: duty.title, placeholder: 'Enter duty',
+                onFocus: () => { dutyTextEl._prev = duty.title; },
+                onInput: () => { duty.title = dutyTextEl.textContent; },
+                onBlur:  () => {
                     const newVal = duty.title;
                     if (newVal !== dutyTextEl._prev)
                         pushCommand(makeEditDutyCmd(duty.id, dutyTextEl._prev, newVal));
@@ -458,11 +472,10 @@ export const Renderer = {
 
                     const labelEl = document.createElement('div');
                     labelEl.className = 'cv-task-label';
-                    labelEl.textContent = taskLabel(idx, tIdx);  // "A1"
+                    labelEl.textContent = taskLabel(idx, tIdx);   // "A1", "B3"…
 
                     const deleteTaskBtn = createDeleteCircle({
-                        type: 'task',
-                        title: 'Remove task',
+                        type: 'task', title: 'Remove task',
                         onClick(e) {
                             e.stopPropagation();
                             _actions.removeTask && _actions.removeTask(task.id);
@@ -470,19 +483,16 @@ export const Renderer = {
                     });
 
                     const taskTextEl = createEditable({
-                        className: 'cv-task-text',
-                        text: task.text,
-                        placeholder: 'Enter task',
-                        onFocus:  () => { taskTextEl._prev = task.text; },
-                        onInput:  () => { task.text = taskTextEl.textContent; },
-                        onBlur:   () => {
+                        className: 'cv-task-text', text: task.text, placeholder: 'Enter task',
+                        onFocus: () => { taskTextEl._prev = task.text; },
+                        onInput: () => { task.text = taskTextEl.textContent; },
+                        onBlur:  () => {
                             const newVal = task.text;
                             if (newVal !== taskTextEl._prev)
                                 pushCommand(makeEditTaskCmd(duty.id, task.id, taskTextEl._prev, newVal));
                         }
                     });
 
-                    // Top-left: handle + label combined
                     const topLeftEl = document.createElement('div');
                     topLeftEl.style.cssText = 'display:flex;align-items:center;gap:4px;';
                     topLeftEl.appendChild(taskDragHandle);
@@ -512,7 +522,7 @@ export const Renderer = {
             row.appendChild(tasksWrapper);
             inner.appendChild(row);
 
-            // Card view duty drag = horizontal axis
+            // Card view duty DnD — horizontal axis
             _attachDutyDragListeners(row, dutyDragHandle, duty, 'x');
         });
     }
