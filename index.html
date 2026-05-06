@@ -219,6 +219,7 @@
             justify-content: center;
             box-shadow: 0 3px 12px rgba(67,56,202,.28);
             flex-shrink: 0;
+            overflow: hidden;
         }
         .wv-duty-badge {
             font-size: .72em;
@@ -232,6 +233,8 @@
             font-size: .98em;
             font-weight: 700;
             line-height: 1.35;
+            word-break: break-word;
+            overflow-wrap: break-word;
         }
         .wv-duty-title-empty {
             font-size: .88em;
@@ -324,7 +327,7 @@
     </style>
 
     <!-- ── App Bootstrap (ES Module) ────────────────────────── -->
-    <script type="module" src="./app.js?v=3.1.0"></script>
+    <script type="module" src="./app.js"></script>
 </head>
 <body>
 
