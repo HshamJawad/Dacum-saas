@@ -1,4 +1,4 @@
-const APP_VERSION = "3.1.0";
+const APP_VERSION = "3.0.0";
 // ============================================================
 // app.js — Application Bootstrap
 // Connects all modules, initialises project manager, renders

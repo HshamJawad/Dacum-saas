@@ -110,6 +110,75 @@ export function clearDuty(dutyId) {
 
 export function cvAddDuty() { addDuty(); }
 
+// ── View helpers ─────────────────────────────────────────────
+export function showTableView() { if (AppState.isCardView) toggleCardView(); }
+export function showCardView()  { if (!AppState.isCardView) toggleCardView(); }
+
+// ══════════════════════════════════════════════════════════════
+//  WALL VIEW  (v3.1)
+// ══════════════════════════════════════════════════════════════
+
+let _wallZoom = 100;
+
+export function showWallView() {
+    const container = document.getElementById('wallViewContainer');
+    if (!container) return;
+    Renderer.renderWallView(StateManager.state);
+    _wallZoom = 100;
+    _applyWallZoom();
+    container.classList.add('wv-visible');
+    document.body.style.overflow = 'hidden';
+}
+
+export function exitWallView() {
+    const container = document.getElementById('wallViewContainer');
+    if (!container) return;
+    container.classList.remove('wv-visible');
+    document.body.style.overflow = '';
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    const fsBtn = document.getElementById('wvFullscreenBtn');
+    if (fsBtn) fsBtn.textContent = '⛶ Fullscreen';
+}
+
+export function wallViewZoom(delta) {
+    _wallZoom = Math.max(25, Math.min(200, _wallZoom + delta));
+    _applyWallZoom();
+}
+
+export function resetWallZoom() {
+    _wallZoom = 100;
+    _applyWallZoom();
+}
+
+function _applyWallZoom() {
+    const chart = document.getElementById('wvChart');
+    const label = document.getElementById('wvZoomLevel');
+    if (chart) chart.style.zoom = _wallZoom / 100;
+    if (label) label.textContent = _wallZoom + '%';
+}
+
+export function printWallView() {
+    const chart = document.getElementById('wvChart');
+    const prev  = _wallZoom;
+    if (chart) chart.style.zoom = 0.70;
+    window.print();
+    setTimeout(() => { if (chart) chart.style.zoom = prev / 100; }, 500);
+}
+
+export function toggleWallFullscreen() {
+    const container = document.getElementById('wallViewContainer');
+    const btn       = document.getElementById('wvFullscreenBtn');
+    if (!container) return;
+    if (!document.fullscreenElement) {
+        container.requestFullscreen()
+            .then(() => { if (btn) btn.textContent = '⛶ Exit Fullscreen'; })
+            .catch(err => console.warn('[WallView] Fullscreen error:', err));
+    } else {
+        document.exitFullscreen()
+            .then(() => { if (btn) btn.textContent = '⛶ Fullscreen'; });
+    }
+}
+
 // ── Card / Table view toggle ──────────────────────────────────
 // Only shows/hides #cardViewContainer vs #tableViewArea.
 // The .tabs bar and sibling .tab-content panels are NEVER touched.
