@@ -78,22 +78,25 @@
         .wv-container.wv-visible { display: flex; }
 
         /* ── Top bar (title + view tabs) ─────────────────────── */
+        /* ── Single merged toolbar ────────────────────────────── */
         .wv-topbar {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 11px 20px;
+            padding: 8px 16px;
             background: #ffffff;
             border-bottom: 1px solid #e2e8f0;
             flex-shrink: 0;
-            gap: 12px;
+            gap: 8px;
+            min-height: 52px;
         }
         .wv-title {
-            font-size: 1.1em;
+            font-size: 1em;
             font-weight: 700;
             color: #1e293b;
             margin: 0;
             white-space: nowrap;
+            flex: 1;
+            text-align: center;
         }
         .wv-view-tabs {
             display: flex;
@@ -101,10 +104,11 @@
             background: #f1f5f9;
             padding: 3px;
             border-radius: 9px;
+            flex-shrink: 0;
         }
         .wv-view-tab {
-            padding: 6px 16px;
-            font-size: .82em;
+            padding: 5px 13px;
+            font-size: .8em;
             font-weight: 600;
             border: none;
             border-radius: 6px;
@@ -121,24 +125,17 @@
             cursor: default;
         }
 
-        /* ── Toolbar (exit / zoom / print / fullscreen) ───────── */
-        .wv-toolbar {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 9px 20px;
-            background: #ffffff;
-            border-bottom: 1px solid #e2e8f0;
-            flex-shrink: 0;
-        }
+        /* Old separate toolbar — no longer used */
+        .wv-toolbar { display: none; }
+
         .wv-btn {
             display: inline-flex;
             align-items: center;
             gap: 5px;
-            padding: 7px 14px;
+            padding: 6px 12px;
             border-radius: 8px;
             border: 1px solid #d1d5db;
-            font-size: .83em;
+            font-size: .8em;
             font-weight: 600;
             cursor: pointer;
             background: #ffffff;
@@ -152,7 +149,6 @@
         .wv-btn--exit:hover { background: #fee2e2; }
         .wv-btn--print { color: #1d4ed8; }
         .wv-btn--print:hover { background: #eff6ff; }
-        .wv-btn--full { color: #374151; }
 
         /* Zoom control group */
         .wv-zoom-group {
@@ -161,28 +157,29 @@
             border: 1px solid #d1d5db;
             border-radius: 8px;
             overflow: hidden;
+            flex-shrink: 0;
         }
         .wv-btn--zoom {
             border: none;
             border-radius: 0;
-            padding: 7px 13px;
+            padding: 6px 11px;
             background: #f8fafc;
             color: #374151;
         }
         .wv-btn--zoom:hover { background: #e2e8f0; }
         .wv-zoom-label {
-            padding: 0 14px;
-            font-size: .84em;
+            padding: 0 12px;
+            font-size: .82em;
             font-weight: 700;
             color: #1e293b;
-            min-width: 56px;
+            min-width: 50px;
             text-align: center;
             background: #ffffff;
             border-left: 1px solid #e5e7eb;
             border-right: 1px solid #e5e7eb;
-            line-height: 34px;
+            line-height: 30px;
         }
-        .wv-toolbar-spacer { flex: 1; }
+        .wv-toolbar-spacer { display: none; }
 
         /* ── Scrollable chart area ────────────────────────────── */
         .wv-scroll-area {
@@ -235,12 +232,24 @@
             line-height: 1.35;
             word-break: break-word;
             overflow-wrap: break-word;
+            /* Editable */
+            outline: none;
+            border-radius: 5px;
+            padding: 2px 4px;
+            margin: -2px -4px;
+            cursor: text;
+            min-height: 1.35em;
+            color: #ffffff;
+            transition: background .15s;
         }
-        .wv-duty-title-empty {
-            font-size: .88em;
-            opacity: .55;
+        .wv-duty-title:empty::before {
+            content: attr(data-placeholder);
+            opacity: .45;
             font-style: italic;
+            font-weight: 400;
         }
+        .wv-duty-title:hover  { background: rgba(255,255,255,.1); }
+        .wv-duty-title:focus  { background: rgba(255,255,255,.18); }
 
         /* ── Task grid (to the right of duty card) ────────────── */
         .wv-tasks-grid {
@@ -274,7 +283,22 @@
             color: #334155;
             line-height: 1.38;
             word-break: break-word;
+            /* Editable */
+            outline: none;
+            border-radius: 4px;
+            padding: 2px 3px;
+            margin: -2px -3px;
+            cursor: text;
+            min-height: 1.38em;
+            transition: background .15s;
         }
+        .wv-task-text:empty::before {
+            content: attr(data-placeholder);
+            color: #94a3b8;
+            font-style: italic;
+        }
+        .wv-task-text:hover { background: rgba(99,102,241,.06); }
+        .wv-task-text:focus { background: rgba(99,102,241,.1); outline: none; }
         .wv-no-tasks {
             display: flex;
             align-items: center;
@@ -356,7 +380,6 @@
                 background: #fff !important;
             }
             .wv-topbar { display: none !important; }
-            .wv-toolbar { display: none !important; }
             .wv-scroll-area {
                 overflow: visible !important;
                 padding: 8px !important;
@@ -813,32 +836,32 @@
      ═══════════════════════════════════════════════════════════ -->
 <div id="wallViewContainer" class="wv-container">
 
-    <!-- Top bar: title + view tabs ──────────────────────────── -->
+    <!-- ── Single merged toolbar ─────────────────────────────── -->
     <div class="wv-topbar">
+
+        <!-- Left: Exit + Zoom + Reset -->
+        <button class="wv-btn wv-btn--exit" onclick="exitWallView()">✕ Exit</button>
+
+        <div class="wv-zoom-group">
+            <button class="wv-btn wv-btn--zoom" onclick="wallViewZoom(-5)" title="Zoom out −5%">🔍−</button>
+            <span class="wv-zoom-label" id="wvZoomLevel">100%</span>
+            <button class="wv-btn wv-btn--zoom" onclick="wallViewZoom(+5)" title="Zoom in +5%">🔍+</button>
+        </div>
+        <button class="wv-btn" onclick="resetWallZoom()" title="Reset zoom">↺ Reset</button>
+
+        <!-- Centre: Title -->
         <span class="wv-title">🧱 Wall View — DACUM Research Chart</span>
+
+        <!-- Right: Print + Fullscreen + View switcher -->
+        <button class="wv-btn wv-btn--print" onclick="printWallView()">🖨️ Print</button>
+        <button class="wv-btn" id="wvFullscreenBtn" onclick="toggleWallFullscreen()">⛶ Fullscreen</button>
+
         <div class="wv-view-tabs">
             <button class="wv-view-tab" onclick="exitWallView(); showCardView();">🃏 Card</button>
             <button class="wv-view-tab" onclick="exitWallView(); showTableView();">📋 Table</button>
             <button class="wv-view-tab wv-view-tab--active">🧱 Wall</button>
         </div>
-    </div>
 
-    <!-- Toolbar: exit / zoom / print / fullscreen ───────────── -->
-    <div class="wv-toolbar">
-        <button class="wv-btn wv-btn--exit" onclick="exitWallView()">✕ Exit</button>
-
-        <div class="wv-zoom-group">
-            <button class="wv-btn wv-btn--zoom" onclick="wallViewZoom(-5)" title="Zoom out (−5%)">🔍−</button>
-            <span class="wv-zoom-label" id="wvZoomLevel">100%</span>
-            <button class="wv-btn wv-btn--zoom" onclick="wallViewZoom(+5)" title="Zoom in (+5%)">🔍+</button>
-        </div>
-
-        <button class="wv-btn" onclick="resetWallZoom()" title="Reset zoom to 100%">↺ Reset</button>
-
-        <div class="wv-toolbar-spacer"></div>
-
-        <button class="wv-btn wv-btn--print" onclick="printWallView()" title="Print chart">🖨️ Print</button>
-        <button class="wv-btn wv-btn--full" id="wvFullscreenBtn" onclick="toggleWallFullscreen()" title="Fullscreen">⛶ Fullscreen</button>
     </div>
 
     <!-- Chart scroll area ───────────────────────────────────── -->
