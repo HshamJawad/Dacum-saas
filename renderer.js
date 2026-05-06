@@ -415,10 +415,20 @@ export const Renderer = {
             return;
         }
 
+        /** Small utility: make a sticky-note icon button */
+        function _icBtn(label, title, classes, onClick) {
+            const b = document.createElement('button');
+            b.className = 'wv-ic-btn ' + classes;
+            b.textContent = label;
+            b.title = title;
+            b.addEventListener('click', (e) => { e.stopPropagation(); onClick(); });
+            return b;
+        }
+
         state.duties.forEach((duty, idx) => {
             const letter = getDutyLetter(idx);
 
-            // ── Full duty row (draggable unit) ─────────────────
+            // ── Full duty row ──────────────────────────────────
             const row = document.createElement('div');
             row.className = 'wv-duty-row';
             row.id = 'wv_' + duty.id;
@@ -427,7 +437,10 @@ export const Renderer = {
             const dutyCard = document.createElement('div');
             dutyCard.className = 'wv-duty-card';
 
-            // Drag handle
+            // Top bar: [⠿ Duty X] ··· [＋ ✕]
+            const dutyTopBar = document.createElement('div');
+            dutyTopBar.className = 'wv-duty-card-topbar';
+
             const dutyDragHandle = document.createElement('span');
             dutyDragHandle.className = 'wv-duty-drag-handle';
             dutyDragHandle.textContent = '⠿';
@@ -437,12 +450,46 @@ export const Renderer = {
             badge.className = 'wv-duty-badge';
             badge.textContent = 'Duty ' + letter;
 
-            const badgeRow = document.createElement('div');
-            badgeRow.className = 'wv-duty-badge-row';
-            badgeRow.appendChild(dutyDragHandle);
-            badgeRow.appendChild(badge);
+            const badgeLeft = document.createElement('div');
+            badgeLeft.className = 'wv-duty-badge-left';
+            badgeLeft.appendChild(dutyDragHandle);
+            badgeLeft.appendChild(badge);
 
-            // ── Editable duty title ────────────────────────────
+            // ＋ Add task to this duty
+            const addTaskBtn = _icBtn('＋', 'Add task to this duty',
+                'wv-ic-btn--duty-add',
+                () => {
+                    if (_actions.addTask) {
+                        _actions.addTask(duty.id);
+                        // Re-render wall view after state update
+                        Renderer.renderWallView(StateManager.state);
+                    }
+                }
+            );
+
+            // ✕ Delete duty
+            const delDutyBtn = _icBtn('✕', 'Delete this duty',
+                'wv-ic-btn--duty-del',
+                () => {
+                    if (confirm('Delete "' + (duty.title || 'this duty') + '" and all its tasks?')) {
+                        if (_actions.removeDuty) {
+                            _actions.removeDuty(duty.id);
+                            Renderer.renderWallView(StateManager.state);
+                        }
+                    }
+                }
+            );
+
+            const dutyIconGroup = document.createElement('div');
+            dutyIconGroup.className = 'wv-duty-icon-group';
+            dutyIconGroup.appendChild(addTaskBtn);
+            dutyIconGroup.appendChild(delDutyBtn);
+
+            dutyTopBar.appendChild(badgeLeft);
+            dutyTopBar.appendChild(dutyIconGroup);
+            dutyCard.appendChild(dutyTopBar);
+
+            // Editable duty title
             const titleEl = createEditable({
                 className: 'wv-duty-title',
                 text: duty.title,
@@ -455,8 +502,6 @@ export const Renderer = {
                         pushCommand(makeEditDutyCmd(duty.id, titleEl._prev, newVal));
                 }
             });
-
-            dutyCard.appendChild(badgeRow);
             dutyCard.appendChild(titleEl);
             row.appendChild(dutyCard);
 
@@ -467,14 +512,17 @@ export const Renderer = {
             if (duty.tasks.length === 0) {
                 const empty = document.createElement('div');
                 empty.className = 'wv-no-tasks';
-                empty.textContent = 'No tasks yet — drop here.';
+                empty.textContent = 'No tasks yet — drop here or use ＋';
                 grid.appendChild(empty);
             } else {
                 duty.tasks.forEach((task, tIdx) => {
                     const card = document.createElement('div');
                     card.className = 'wv-task-card';
 
-                    // Task drag handle
+                    // Top bar: [⠿ TaskA1] ··· [＋ ✕]
+                    const taskTopBar = document.createElement('div');
+                    taskTopBar.className = 'wv-task-card-topbar';
+
                     const taskDragHandle = document.createElement('span');
                     taskDragHandle.className = 'wv-task-drag-handle';
                     taskDragHandle.textContent = '⠿';
@@ -484,12 +532,42 @@ export const Renderer = {
                     lbl.className = 'wv-task-label';
                     lbl.textContent = 'Task ' + letter + (tIdx + 1);
 
-                    const labelRow = document.createElement('div');
-                    labelRow.className = 'wv-task-label-row';
-                    labelRow.appendChild(taskDragHandle);
-                    labelRow.appendChild(lbl);
+                    const taskLabelLeft = document.createElement('div');
+                    taskLabelLeft.className = 'wv-task-label-left';
+                    taskLabelLeft.appendChild(taskDragHandle);
+                    taskLabelLeft.appendChild(lbl);
 
-                    // ── Editable task text ─────────────────────
+                    // ＋ Add new task after this one
+                    const addAfterBtn = _icBtn('＋', 'Add new task after this one',
+                        'wv-ic-btn--task-add',
+                        () => {
+                            if (_actions.addTask) {
+                                _actions.addTask(duty.id);
+                                Renderer.renderWallView(StateManager.state);
+                            }
+                        }
+                    );
+
+                    // ✕ Delete this task
+                    const delTaskBtn = _icBtn('✕', 'Delete this task',
+                        'wv-ic-btn--task-del',
+                        () => {
+                            if (_actions.removeTask) {
+                                _actions.removeTask(task.id);
+                                Renderer.renderWallView(StateManager.state);
+                            }
+                        }
+                    );
+
+                    const taskIconGroup = document.createElement('div');
+                    taskIconGroup.className = 'wv-task-icon-group';
+                    taskIconGroup.appendChild(addAfterBtn);
+                    taskIconGroup.appendChild(delTaskBtn);
+
+                    taskTopBar.appendChild(taskLabelLeft);
+                    taskTopBar.appendChild(taskIconGroup);
+
+                    // Editable task text
                     const taskTextEl = createEditable({
                         className: 'wv-task-text',
                         text: task.text,
@@ -503,7 +581,7 @@ export const Renderer = {
                         }
                     });
 
-                    card.appendChild(labelRow);
+                    card.appendChild(taskTopBar);
                     card.appendChild(taskTextEl);
                     grid.appendChild(card);
 

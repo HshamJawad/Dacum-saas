@@ -210,13 +210,17 @@
             background: linear-gradient(160deg, #4338ca 0%, #6366f1 100%);
             color: #ffffff;
             border-radius: 11px;
-            padding: 18px 16px;
+            padding: 0 0 14px 0;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start;
             box-shadow: 0 3px 12px rgba(67,56,202,.28);
             flex-shrink: 0;
             overflow: hidden;
+        }
+        .wv-duty-title {
+            padding: 4px 12px 0;
+            margin: 0;
         }
         .wv-duty-badge {
             font-size: .72em;
@@ -267,9 +271,11 @@
             background: #fefce8;
             border: 1.5px solid #fde68a;
             border-radius: 9px;
-            padding: 10px 11px;
+            padding: 0;
             box-shadow: 0 1px 4px rgba(0,0,0,.07);
             box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
         }
         .wv-task-label {
             font-size: .74em;
@@ -283,6 +289,8 @@
             color: #334155;
             line-height: 1.38;
             word-break: break-word;
+            padding: 3px 9px 9px;
+            flex: 1;
             /* Editable */
             outline: none;
             border-radius: 4px;
@@ -307,6 +315,101 @@
             color: #94a3b8;
             font-style: italic;
         }
+
+        /* ── Wall View: icon action buttons (sticky-note style) ─ */
+
+        /* Duty card top bar: badge-row becomes a 3-zone row */
+        .wv-duty-card-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 10px 0;
+        }
+        .wv-duty-badge-left {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .wv-duty-icon-group {
+            display: flex;
+            gap: 3px;
+        }
+
+        /* Task card top bar */
+        .wv-task-card-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 7px 8px 0;
+        }
+        .wv-task-label-left {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .wv-task-icon-group {
+            display: flex;
+            gap: 3px;
+        }
+
+        /* Base icon button */
+        .wv-ic-btn {
+            width: 21px;
+            height: 21px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1;
+            transition: background .14s, color .14s, transform .1s;
+            flex-shrink: 0;
+            padding: 0;
+            font-family: inherit;
+        }
+        .wv-ic-btn:active { transform: scale(.9); }
+
+        /* Duty card icons — white tones on indigo */
+        .wv-ic-btn--duty-add {
+            background: rgba(255,255,255,.14);
+            color: rgba(255,255,255,.82);
+        }
+        .wv-ic-btn--duty-add:hover {
+            background: rgba(255,255,255,.28);
+            color: #fff;
+        }
+        .wv-ic-btn--duty-del {
+            background: rgba(239,68,68,.22);
+            color: #fca5a5;
+        }
+        .wv-ic-btn--duty-del:hover {
+            background: rgba(239,68,68,.48);
+            color: #fff;
+        }
+
+        /* Task card icons — indigo/red tones on cream */
+        .wv-ic-btn--task-add {
+            background: rgba(99,102,241,.1);
+            color: #6366f1;
+        }
+        .wv-ic-btn--task-add:hover {
+            background: rgba(99,102,241,.22);
+            color: #4338ca;
+        }
+        .wv-ic-btn--task-del {
+            background: rgba(239,68,68,.09);
+            color: #dc2626;
+        }
+        .wv-ic-btn--task-del:hover {
+            background: rgba(239,68,68,.22);
+            color: #b91c1c;
+        }
+
+        /* Hide icon buttons in print */
+        @media print { .wv-ic-btn { display: none !important; } }
 
         /* ── Wall View: Drag handles ──────────────────────────── */
         .wv-duty-badge-row {
