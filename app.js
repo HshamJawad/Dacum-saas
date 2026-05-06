@@ -418,6 +418,11 @@ window.addEventListener('DOMContentLoaded', () => {
         printWallView, toggleWallFullscreen,
         showTableView, showCardView,
 
+        // ── Help tab ─────────────────────────────────────────────
+        openUserGuide: () => {
+            window.open('user-guide.html', '_blank');
+        },
+
         // ── Undo / Redo ──────────────────────────────────────────
         undo, redo,
 
