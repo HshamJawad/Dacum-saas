@@ -61,8 +61,9 @@ let customSectionCounter = 0;
 export function addDuty() {
     AppState.dutyCount++;
     const dutyId = 'duty_' + AppState.dutyCount;
-    AppState.taskCounts[dutyId] = 0;
-    const dutyObj = { id: dutyId, title: '', tasks: [] };
+    AppState.taskCounts[dutyId] = 1;   // start with 1 task
+    const taskId = 'task_' + dutyId + '_1';
+    const dutyObj = { id: dutyId, title: '', tasks: [{ id: taskId, text: '' }] };
     const cmd = makeAddDutyCmd(dutyObj);
     cmd.execute();
     pushCommand(cmd);
@@ -108,106 +109,6 @@ export function clearDuty(dutyId) {
 }
 
 export function cvAddDuty() { addDuty(); }
-
-// ── View helpers (used by wall view tab buttons) ─────────────
-export function showTableView() {
-    if (AppState.isCardView) toggleCardView();
-}
-export function showCardView() {
-    if (!AppState.isCardView) toggleCardView();
-}
-
-// ══════════════════════════════════════════════════════════════
-//  WALL VIEW  (v3.1)
-//  Full-screen overlay that mimics DACUM workshop wall cards.
-// ══════════════════════════════════════════════════════════════
-
-let _wallZoom = 100;   // current zoom level in percent (5% steps)
-
-/** Show the Wall View overlay and render the chart */
-export function showWallView() {
-    const container = document.getElementById('wallViewContainer');
-    if (!container) return;
-
-    // Render fresh from AppState
-    Renderer.renderWallView(StateManager.state);
-
-    // Reset zoom to 100%
-    _wallZoom = 100;
-    _applyWallZoom();
-
-    // Show overlay — body overflow hidden to prevent scroll bleed
-    container.classList.add('wv-visible');
-    document.body.style.overflow = 'hidden';
-}
-
-/** Hide the Wall View overlay */
-export function exitWallView() {
-    const container = document.getElementById('wallViewContainer');
-    if (!container) return;
-    container.classList.remove('wv-visible');
-    document.body.style.overflow = '';
-
-    // Exit fullscreen if active
-    if (document.fullscreenElement) {
-        document.exitFullscreen().catch(() => {});
-    }
-    // Reset fullscreen button label
-    const fsBtn = document.getElementById('wvFullscreenBtn');
-    if (fsBtn) fsBtn.textContent = '⛶ Fullscreen';
-}
-
-/**
- * Adjust Wall View zoom by `delta` percent (positive = zoom in).
- * Clamped to [25%, 200%], steps of 5%.
- */
-export function wallViewZoom(delta) {
-    _wallZoom = Math.max(25, Math.min(200, _wallZoom + delta));
-    _applyWallZoom();
-}
-
-/** Reset Wall View zoom to 100% */
-export function resetWallZoom() {
-    _wallZoom = 100;
-    _applyWallZoom();
-}
-
-/** Apply the current zoom level to the chart element */
-function _applyWallZoom() {
-    const chart = document.getElementById('wvChart');
-    const label = document.getElementById('wvZoomLevel');
-    if (chart) chart.style.zoom = _wallZoom / 100;
-    if (label) label.textContent = _wallZoom + '%';
-}
-
-/** Print the Wall View chart (resets zoom to 75% for print fit) */
-export function printWallView() {
-    const chart = document.getElementById('wvChart');
-    const prevZoom = _wallZoom;
-    // Scale down slightly for better print fit across most printers
-    if (chart) chart.style.zoom = 0.70;
-    window.print();
-    // Restore after a short delay (print dialog is synchronous on most browsers)
-    setTimeout(() => {
-        if (chart) chart.style.zoom = prevZoom / 100;
-    }, 500);
-}
-
-/** Toggle browser fullscreen for the Wall View overlay */
-export function toggleWallFullscreen() {
-    const container = document.getElementById('wallViewContainer');
-    const btn       = document.getElementById('wvFullscreenBtn');
-    if (!container) return;
-
-    if (!document.fullscreenElement) {
-        container.requestFullscreen()
-            .then(() => { if (btn) btn.textContent = '⛶ Exit Fullscreen'; })
-            .catch(err => console.warn('[WallView] Fullscreen error:', err));
-    } else {
-        document.exitFullscreen()
-            .then(() => { if (btn) btn.textContent = '⛶ Fullscreen'; });
-    }
-}
 
 // ── Card / Table view toggle ──────────────────────────────────
 // Only shows/hides #cardViewContainer vs #tableViewArea.
