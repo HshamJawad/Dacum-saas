@@ -137,8 +137,14 @@ function _attachDutyDragListeners(dutyEl, handle, duty, axis) {
 
 // ══════════════════════════════════════════════════════════════
 //  TASK DRAG-AND-DROP
-//  Tasks use cursor position (top/bottom half) because tasks are
-//  small and the direction is always clear within a short list.
+//
+//  KEY FIX (v3.1.2):
+//  For same-duty reordering we now use DRAG DIRECTION (like duties):
+//    • Dragging DOWN (fromIdx < targetIdx) → insert AFTER target
+//    • Dragging UP   (fromIdx > targetIdx) → insert BEFORE target
+//  This eliminates the no-op bug when dragging task 0 → position 1.
+//  For cross-duty drops we keep cursor position (top/bottom half)
+//  since direction doesn't apply across different lists.
 // ══════════════════════════════════════════════════════════════
 
 function _attachTaskDragListeners(taskEl, handle, dutyRef, taskRef) {
@@ -152,7 +158,7 @@ function _attachTaskDragListeners(taskEl, handle, dutyRef, taskRef) {
         _drag.el     = taskEl;
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', taskRef.id);
-        e.stopPropagation();    // don't bubble to duty dragstart
+        e.stopPropagation();
         setTimeout(() => taskEl.classList.add('dragging'), 0);
     });
 
@@ -168,9 +174,23 @@ function _attachTaskDragListeners(taskEl, handle, dutyRef, taskRef) {
         e.preventDefault();
         e.stopPropagation();
         e.dataTransfer.dropEffect = 'move';
-        const rect = taskEl.getBoundingClientRect();
+
+        const sameList = _drag.dutyId === dutyRef.id;
         taskEl.classList.remove('drag-over-top', 'drag-over-bottom');
-        taskEl.classList.add(e.clientY < rect.top + rect.height / 2 ? 'drag-over-top' : 'drag-over-bottom');
+
+        if (sameList) {
+            // Direction-based: dragging down → show bottom indicator, up → top
+            const srcDuty     = AppState.duties.find(d => d.id === _drag.dutyId);
+            const fromTaskIdx = srcDuty ? srcDuty.tasks.findIndex(t => t.id === _drag.taskId) : -1;
+            const tgtDuty     = AppState.duties.find(d => d.id === dutyRef.id);
+            const targetIdx   = tgtDuty ? tgtDuty.tasks.findIndex(t => t.id === taskRef.id) : -1;
+            const draggingDown = fromTaskIdx < targetIdx;
+            taskEl.classList.add(draggingDown ? 'drag-over-bottom' : 'drag-over-top');
+        } else {
+            // Cross-duty: use cursor position (top/bottom half)
+            const rect = taskEl.getBoundingClientRect();
+            taskEl.classList.add(e.clientY < rect.top + rect.height / 2 ? 'drag-over-top' : 'drag-over-bottom');
+        }
     });
 
     taskEl.addEventListener('dragleave', (e) => {
@@ -192,13 +212,22 @@ function _attachTaskDragListeners(taskEl, handle, dutyRef, taskRef) {
         const targetTaskIdx = tgtDuty.tasks.findIndex(t => t.id === taskRef.id);
         if (fromTaskIdx === -1 || targetTaskIdx === -1) return;
 
-        const rect         = taskEl.getBoundingClientRect();
-        const insertBefore = e.clientY < rect.top + rect.height / 2;
-        const toInsertIdx  = insertBefore ? targetTaskIdx : targetTaskIdx + 1;
+        const sameList = _drag.dutyId === dutyRef.id;
 
-        const sameList       = _drag.dutyId === dutyRef.id;
+        let toInsertIdx;
+        if (sameList) {
+            // Direction-based: down → insert after, up → insert before
+            const draggingDown = fromTaskIdx < targetTaskIdx;
+            toInsertIdx = draggingDown ? targetTaskIdx + 1 : targetTaskIdx;
+        } else {
+            // Cross-duty: cursor position
+            const rect         = taskEl.getBoundingClientRect();
+            const insertBefore = e.clientY < rect.top + rect.height / 2;
+            toInsertIdx = insertBefore ? targetTaskIdx : targetTaskIdx + 1;
+        }
+
         const finalInsertIdx = (sameList && fromTaskIdx < toInsertIdx) ? toInsertIdx - 1 : toInsertIdx;
-        if (sameList && fromTaskIdx === finalInsertIdx) return;
+        if (sameList && fromTaskIdx === finalInsertIdx) return;   // true no-op guard
 
         const cmd = makeMoveTaskCmd(_drag.taskId, _drag.dutyId, fromTaskIdx, dutyRef.id, toInsertIdx);
         cmd.execute();
