@@ -1,5 +1,5 @@
 // ============================================================
-// renderer.js — DOM Rendering Layer  (DACUM Lite v3.0.1)
+// renderer.js — DOM Rendering Layer  (DACUM Lite v3.1)
 // ============================================================
 import { AppState, StateManager } from './state.js';
 import {
@@ -477,7 +477,8 @@ export const Renderer = {
         });
     },
 
-    // ── CARD VIEW ──────────────────────────────────────────────    renderCardView(state) {
+    // ── CARD VIEW ──────────────────────────────────────────────
+    renderCardView(state) {
         const inner = document.getElementById('cardViewInner');
         if (!inner) return;
         inner.innerHTML = '';
