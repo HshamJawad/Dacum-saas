@@ -405,9 +405,9 @@ export const Renderer = {
     // ── WALL VIEW ──────────────────────────────────────────────
     /**
      * Renders the Wall View chart (full-screen overlay).
-     * Each duty = one horizontal row:  [Duty Card] [Task...Task...Task...]
-     * Tasks wrap naturally within the row. Zoom is applied via CSS zoom
-     * property in wallView.js so the render itself is zoom-agnostic.
+     * Each duty = one horizontal row: [Duty Card][Task...Task...]
+     * Supports drag-and-drop for duties (vertical) and tasks
+     * (within same duty or across duties) — same logic as table/card.
      */
     renderWallView(state) {
         const chart = document.getElementById('wvChart');
@@ -424,24 +424,38 @@ export const Renderer = {
         state.duties.forEach((duty, idx) => {
             const letter = getDutyLetter(idx);
 
-            // ── Full duty row ──────────────────────────────────
+            // ── Full duty row (draggable unit) ─────────────────
             const row = document.createElement('div');
             row.className = 'wv-duty-row';
+            row.id = 'wv_' + duty.id;
 
             // ── Duty card (indigo) ─────────────────────────────
             const dutyCard = document.createElement('div');
             dutyCard.className = 'wv-duty-card';
 
+            // Drag handle — top of the duty card
+            const dutyDragHandle = document.createElement('span');
+            dutyDragHandle.className = 'wv-duty-drag-handle';
+            dutyDragHandle.textContent = '⠿';
+            dutyDragHandle.title = 'Drag to reorder duties';
+
             const badge = document.createElement('div');
             badge.className = 'wv-duty-badge';
             badge.textContent = 'Duty ' + letter;
 
-            const title = document.createElement('div');
-            title.className = duty.title ? 'wv-duty-title' : 'wv-duty-title wv-duty-title-empty';
-            title.textContent = duty.title || '(No description)';
+            const titleEl = document.createElement('div');
+            titleEl.className = duty.title
+                ? 'wv-duty-title'
+                : 'wv-duty-title wv-duty-title-empty';
+            titleEl.textContent = duty.title || '(No description)';
 
-            dutyCard.appendChild(badge);
-            dutyCard.appendChild(title);
+            const badgeRow = document.createElement('div');
+            badgeRow.className = 'wv-duty-badge-row';
+            badgeRow.appendChild(dutyDragHandle);
+            badgeRow.appendChild(badge);
+
+            dutyCard.appendChild(badgeRow);
+            dutyCard.appendChild(titleEl);
             row.appendChild(dutyCard);
 
             // ── Tasks grid ─────────────────────────────────────
@@ -451,29 +465,49 @@ export const Renderer = {
             if (duty.tasks.length === 0) {
                 const empty = document.createElement('div');
                 empty.className = 'wv-no-tasks';
-                empty.textContent = 'No tasks yet.';
+                empty.textContent = 'No tasks yet — drop here.';
                 grid.appendChild(empty);
             } else {
                 duty.tasks.forEach((task, tIdx) => {
                     const card = document.createElement('div');
                     card.className = 'wv-task-card';
 
-                    const lbl = document.createElement('div');
+                    // Task drag handle
+                    const taskDragHandle = document.createElement('span');
+                    taskDragHandle.className = 'wv-task-drag-handle';
+                    taskDragHandle.textContent = '⠿';
+                    taskDragHandle.title = 'Drag to reorder or move to another duty';
+
+                    const labelRow = document.createElement('div');
+                    labelRow.className = 'wv-task-label-row';
+                    labelRow.appendChild(taskDragHandle);
+
+                    const lbl = document.createElement('span');
                     lbl.className = 'wv-task-label';
                     lbl.textContent = 'Task ' + letter + (tIdx + 1);
+                    labelRow.appendChild(lbl);
 
                     const txt = document.createElement('div');
                     txt.className = 'wv-task-text';
                     txt.textContent = task.text || '';
 
-                    card.appendChild(lbl);
+                    card.appendChild(labelRow);
                     card.appendChild(txt);
                     grid.appendChild(card);
+
+                    // Wire task drag-and-drop (reuse existing logic)
+                    _attachTaskDragListeners(card, taskDragHandle, duty, task);
                 });
             }
 
+            // Drop zone for empty grid / end-of-list drops
+            _attachTaskListDropZone(grid, duty);
+
             row.appendChild(grid);
             chart.appendChild(row);
+
+            // Wire duty drag-and-drop — vertical axis (same as table view)
+            _attachDutyDragListeners(row, dutyDragHandle, duty, 'y');
         });
     },
 
