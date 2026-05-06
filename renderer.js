@@ -455,13 +455,12 @@ export const Renderer = {
             badgeLeft.appendChild(dutyDragHandle);
             badgeLeft.appendChild(badge);
 
-            // ＋ Add task to this duty
-            const addTaskBtn = _icBtn('＋', 'Add task to this duty',
+            // ＋ Add new duty below this one
+            const addTaskBtn = _icBtn('＋', 'Add new duty below',
                 'wv-ic-btn--duty-add',
                 () => {
-                    if (_actions.addTask) {
-                        _actions.addTask(duty.id);
-                        // Re-render wall view after state update
+                    if (_actions.addDuty) {
+                        _actions.addDuty();
                         Renderer.renderWallView(StateManager.state);
                     }
                 }
