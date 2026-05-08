@@ -60,6 +60,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  gap: 12px;
 }
 
 .duties-tab-header h2 {
@@ -76,6 +77,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 18px;
+  gap: 12px;
 }
 
 .card-view-header h2 {
@@ -97,6 +99,106 @@
 .add-section-footer {
   margin-top: 20px;
   text-align: center;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE — ≤ 600px
+   ══════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+
+  /* ── Additional Info cards: title above buttons ─────────── */
+  .section-header-editable {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .section-header-editable h3 {
+    width: 100%;
+    font-size: 1em;
+    padding: 6px 8px;
+  }
+
+  .section-header-actions {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .section-header-actions button {
+    flex: 1;
+    min-width: 80px;
+    font-size: 0.82em;
+    padding: 7px 10px;
+    text-align: center;
+    justify-content: center;
+    white-space: nowrap;
+  }
+
+  /* ── Duties & Tasks header: title above view switcher ──── */
+  .duties-tab-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .duties-tab-header h2 {
+    font-size: 1.2em;
+  }
+
+  .duties-tab-header .view-switcher {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  /* ── Card view header: same treatment ─────────────────── */
+  .card-view-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .card-view-header h2 {
+    font-size: 1.2em;
+  }
+
+  .card-view-header .view-switcher {
+    width: 100%;
+  }
+
+  /* ── View switcher buttons compact on mobile ────────────── */
+  .vsw-btn {
+    padding: 6px 10px;
+    font-size: 0.78em;
+    white-space: nowrap;
+  }
+
+  /* ── Section container padding reduced ──────────────────── */
+  .section-container {
+    padding: 16px 14px;
+  }
+
+  /* ── Duty header: title above actions ───────────────────── */
+  .duty-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .duty-header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .duty-header-actions button {
+    flex: 1;
+    min-width: 70px;
+    font-size: 0.82em;
+    padding: 6px 8px;
+  }
 }
 
 /* ── Top Toolbar — fixed, spans content area ───────────────── */
