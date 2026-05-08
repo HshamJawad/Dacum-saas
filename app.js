@@ -213,20 +213,30 @@ function _switchToProject(id) {
 function _setSidebarState(open) {
     _sidebarOpen = open;
     const sidebar    = document.getElementById('sidebar');
-    const toggleBtn  = document.getElementById('sidebarToggleBtn');
-    const toggleIcon = document.getElementById('sidebarToggleIcon');
+    const overlay    = document.getElementById('sidebarOverlay');
+    const collapseBtn = document.getElementById('sbCollapseBtn');
     const body       = document.body;
+    const isMobile   = window.innerWidth <= 768;
 
     if (open) {
-        sidebar?.classList.remove('sb-collapsed');
-        toggleBtn?.classList.remove('sb-collapsed');
-        body.classList.remove('sb-sidebar-closed');
-        if (toggleIcon) toggleIcon.textContent = '◀';
+        if (isMobile) {
+            // Mobile: slide in over content + show overlay
+            sidebar?.classList.add('sb-mobile-open');
+            sidebar?.classList.remove('sb-collapsed');
+            overlay?.classList.add('sb-overlay-visible');
+        } else {
+            // Desktop: push content
+            sidebar?.classList.remove('sb-collapsed');
+            body.classList.remove('sb-sidebar-closed');
+        }
     } else {
-        sidebar?.classList.add('sb-collapsed');
-        toggleBtn?.classList.add('sb-collapsed');
-        body.classList.add('sb-sidebar-closed');
-        if (toggleIcon) toggleIcon.textContent = '▶';
+        if (isMobile) {
+            sidebar?.classList.remove('sb-mobile-open');
+            overlay?.classList.remove('sb-overlay-visible');
+        } else {
+            sidebar?.classList.add('sb-collapsed');
+            body.classList.add('sb-sidebar-closed');
+        }
     }
 }
 
@@ -404,7 +414,72 @@ window.addEventListener('DOMContentLoaded', () => {
     // ── 4. Bind events and render UI ───────────────────────────
     EventBinder.init();
     renderSidebar();
-    _setSidebarState(true);
+
+    // ── 5. Sidebar initial state (mobile starts closed) ────────
+    if (window.innerWidth <= 768) {
+        _setSidebarState(false);
+    } else {
+        _setSidebarState(true);
+    }
+
+    // ── 6. Handle resize: switch between mobile/desktop mode ───
+    window.addEventListener('resize', () => {
+        const isMobile = window.innerWidth <= 768;
+        const sidebar  = document.getElementById('sidebar');
+        const overlay  = document.getElementById('sidebarOverlay');
+        if (!isMobile) {
+            // Transitioning to desktop: clean up mobile classes
+            sidebar?.classList.remove('sb-mobile-open');
+            overlay?.classList.remove('sb-overlay-visible');
+            // Re-apply desktop open state
+            _setSidebarState(_sidebarOpen);
+        }
+    });
+
+    // ── 7. Swipe gesture (mobile) ─────────────────────────────
+    (function initSwipe() {
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let isSwiping   = false;
+        const EDGE_ZONE  = 28;   // px from left edge to trigger open
+        const THRESHOLD  = 60;   // min horizontal swipe distance
+        const ANGLE_LIMIT = 30;  // max vertical angle (degrees)
+
+        document.addEventListener('touchstart', e => {
+            if (window.innerWidth > 768) return;
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+            // Only start tracking if near left edge (open) or sidebar is open (close)
+            const sidebar = document.getElementById('sidebar');
+            const isOpen  = sidebar?.classList.contains('sb-mobile-open');
+            isSwiping = (touchStartX <= EDGE_ZONE && !isOpen) || isOpen;
+        }, { passive: true });
+
+        document.addEventListener('touchend', e => {
+            if (!isSwiping || window.innerWidth > 768) return;
+            isSwiping = false;
+            const touch  = e.changedTouches[0];
+            const dx     = touch.clientX - touchStartX;
+            const dy     = touch.clientY - touchStartY;
+            const angle  = Math.abs(Math.atan2(dy, dx) * 180 / Math.PI);
+            // Only count near-horizontal swipes
+            if (angle > ANGLE_LIMIT && angle < (180 - ANGLE_LIMIT)) return;
+
+            const sidebar = document.getElementById('sidebar');
+            const isOpen  = sidebar?.classList.contains('sb-mobile-open');
+
+            if (!isOpen && dx > THRESHOLD) {
+                // Swipe right → open
+                _setSidebarState(true);
+                _sidebarOpen = true;
+            } else if (isOpen && dx < -THRESHOLD) {
+                // Swipe left → close
+                _setSidebarState(false);
+                _sidebarOpen = false;
+            }
+        }, { passive: true });
+    })();
 
     // ── 5. Expose all functions to window ──────────────────────
     //       Inline onclick="..." attributes in the HTML need globals.
@@ -494,7 +569,17 @@ window.addEventListener('DOMContentLoaded', () => {
             renderSidebar();
         },
 
-        pmToggleSidebar:  ()     => _setSidebarState(!_sidebarOpen),
+        pmToggleSidebar: () => {
+            const isMobile = window.innerWidth <= 768;
+            const sidebar  = document.getElementById('sidebar');
+            if (isMobile) {
+                const isOpen = sidebar?.classList.contains('sb-mobile-open');
+                _setSidebarState(!isOpen);
+                _sidebarOpen = !isOpen;
+            } else {
+                _setSidebarState(!_sidebarOpen);
+            }
+        },
         pmFilterProjects: (text) => renderSidebar(text),
     });
 });

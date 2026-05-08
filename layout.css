@@ -120,7 +120,7 @@
 
 /* When sidebar is collapsed the toolbar fills the full width  */
 body.sb-sidebar-closed .top-toolbar {
-  left: 18px;                      /* width of the sidebar toggle tab  */
+  left: 0;
 }
 
 .top-toolbar-group {

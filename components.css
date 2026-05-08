@@ -777,49 +777,8 @@ body.sb-sidebar-closed #appWrapper {
   font-weight: 700;
 }
 
-/* ── Toggle tab (right edge of sidebar, fixed) ──────────────────
-   Moves from left:260px (open) to left:0 (closed) with the same
-   transition timing as the sidebar panel. */
-#sidebarToggleBtn {
-  position: fixed;
-  top: 50%;
-  left: 260px;
-  transform: translateY(-50%);
-  width: 18px;
-  height: 56px;
-  padding: 0;
-  background: #1e2a40;
-  border: 1px solid #2a3a58;
-  border-left: none;
-  border-radius: 0 8px 8px 0;
-  color: #4a5a78;
-  font-size: 9px;
-  font-weight: 700;
-  cursor: pointer;
-  z-index: 1001;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  transition: left 0.28s cubic-bezier(0.4, 0, 0.2, 1),
-              background 0.18s, color 0.18s;
-}
-
-/* Maintain vertical centering through all hover states */
-#sidebarToggleBtn:hover {
-  transform: translateY(-50%);
-  background: #263348;
-  color: #7a8fac;
-  box-shadow: none;
-}
-
-/* When sidebar is closed the tab sits at the viewport left edge */
-#sidebarToggleBtn.sb-collapsed {
-  left: 0;
-  border-left: 1px solid #2a3a58;
-  border-right: none;
-  border-radius: 8px 0 0 8px;
-}
+/* ── Old toggle tab — superseded by in-sidebar collapse btn ──── */
+#sidebarToggleBtn { display: none !important; }
 
 /* ── Sidebar header ──────────────────────────────────────────── */
 .sb-header {
