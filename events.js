@@ -49,6 +49,11 @@ export function restoreActiveTab() {
     const tabEl  = document.getElementById(_activeTabId);
     if (tabBtn) tabBtn.classList.add('active');
     if (tabEl)  tabEl.classList.add('active');
+
+    // Sync sidebar nav active state
+    document.querySelectorAll('.sb-nav-item').forEach(i => i.classList.remove('sb-nav-active'));
+    const navItem = document.querySelector(`.sb-nav-item[data-tab="${_activeTabId}"]`);
+    if (navItem) navItem.classList.add('sb-nav-active');
 }
 
 // ── Custom section counter ────────────────────────────────────
@@ -1070,7 +1075,34 @@ export function importProjectFile(event) {
 
 export const EventBinder = {
     init() {
-        // ── Tab navigation ──────────────────────────────────────
+        // ── Sidebar nav navigation ───────────────────────────────
+        document.querySelectorAll('.sb-nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const tabId = this.getAttribute('data-tab');
+                _activeTabId = tabId;
+
+                // Update sidebar nav active state
+                document.querySelectorAll('.sb-nav-item').forEach(i => i.classList.remove('sb-nav-active'));
+                this.classList.add('sb-nav-active');
+
+                // Update tab content visibility
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                const tabEl = document.getElementById(tabId);
+                if (tabEl) tabEl.classList.add('active');
+
+                if (tabId === 'duties-tab' && AppState.duties.length === 0) {
+                    AppState.dutyCount++;
+                    const initDutyId = 'duty_' + AppState.dutyCount;
+                    AppState.taskCounts[initDutyId] = 1;
+                    AppState.duties.push({ id: initDutyId, title: '', tasks: [{ id: 'task_' + initDutyId + '_1', text: '' }] });
+                    saveToLocalStorage();
+                    updateHistoryButtons();
+                    Renderer.renderAll(StateManager.state);
+                }
+            });
+        });
+
+        // ── Tab navigation (legacy — kept for restoreActiveTab compat) ──────────────────────────────────────
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', function() {
                 const tabId = this.getAttribute('data-tab');

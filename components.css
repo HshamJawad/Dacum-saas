@@ -704,6 +704,79 @@ body.sb-sidebar-closed #appWrapper {
   transform: translateX(-260px);
 }
 
+/* ── Section labels ────────────────────────────────────────────── */
+.sb-section-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 14px 6px;
+  font-size: 0.68em;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #3b4a6b;
+  flex-shrink: 0;
+}
+
+.sb-section-label--projects {
+  border-top: 1px solid #1a2438;
+  margin-top: 4px;
+  padding-top: 12px;
+}
+
+/* ── Navigation items ──────────────────────────────────────────── */
+.sb-nav {
+  padding: 4px 8px 8px;
+  flex-shrink: 0;
+}
+
+.sb-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 9px;
+  cursor: pointer;
+  margin-bottom: 2px;
+  border-left: 3px solid transparent;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  user-select: none;
+}
+
+.sb-nav-item:hover {
+  background: #1a2440;
+}
+
+.sb-nav-item.sb-nav-active {
+  background: rgba(99, 102, 241, 0.18);
+  border-left-color: #6366f1;
+}
+
+.sb-nav-icon {
+  font-size: 1.1em;
+  flex-shrink: 0;
+  width: 22px;
+  text-align: center;
+  line-height: 1;
+}
+
+.sb-nav-label {
+  font-size: 0.875em;
+  font-weight: 600;
+  color: #94a3b8;
+  transition: color 0.15s;
+  white-space: nowrap;
+}
+
+.sb-nav-item:hover .sb-nav-label {
+  color: #e2e8f0;
+}
+
+.sb-nav-item.sb-nav-active .sb-nav-label {
+  color: #a5b4fc;
+  font-weight: 700;
+}
+
 /* ── Toggle tab (right edge of sidebar, fixed) ──────────────────
    Moves from left:260px (open) to left:0 (closed) with the same
    transition timing as the sidebar panel. */

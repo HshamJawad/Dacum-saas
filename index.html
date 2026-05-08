@@ -208,7 +208,7 @@
      ══════════════════════════════════════════════════════════ -->
 <div id="sidebar">
 
-    <!-- Brand / App Identity (DACUM Lite v3.1) -->
+    <!-- Brand / App Identity -->
     <div class="sb-brand">
         <div class="sb-brand-logo">📊</div>
         <div class="sb-brand-text">
@@ -217,12 +217,30 @@
         </div>
     </div>
 
-    <!-- Header: projects title + new project button -->
-    <div class="sb-header">
-        <div class="sb-header-title">
-            <span>📁</span>
-            <span>Projects</span>
+    <!-- Navigation Section -->
+    <div class="sb-section-label">NAVIGATION</div>
+    <nav class="sb-nav" id="sbNav">
+        <div class="sb-nav-item sb-nav-active" data-tab="info-tab">
+            <span class="sb-nav-icon">📋</span>
+            <span class="sb-nav-label">Chart Info</span>
         </div>
+        <div class="sb-nav-item" data-tab="duties-tab">
+            <span class="sb-nav-icon">✅</span>
+            <span class="sb-nav-label">Duties &amp; Tasks</span>
+        </div>
+        <div class="sb-nav-item" data-tab="additional-info-tab">
+            <span class="sb-nav-icon">📚</span>
+            <span class="sb-nav-label">Additional Info</span>
+        </div>
+        <div class="sb-nav-item" data-tab="help-tab">
+            <span class="sb-nav-icon">❓</span>
+            <span class="sb-nav-label">Help</span>
+        </div>
+    </nav>
+
+    <!-- Projects Section -->
+    <div class="sb-section-label sb-section-label--projects">
+        <span>📁 PROJECTS</span>
         <button class="sb-new-btn" type="button" onclick="pmNewProject()" title="Create new project">
             + New
         </button>
@@ -363,14 +381,6 @@
             </button>
         </div>
 
-    </div>
-
-    <!-- Tab Navigation ───────────────────────────────────── -->
-    <div class="tabs">
-        <div class="tab active" data-tab="info-tab">📋 Chart Info</div>
-        <div class="tab" data-tab="duties-tab">✅ Duties &amp; Tasks</div>
-        <div class="tab" data-tab="additional-info-tab">📚 Additional Info</div>
-        <div class="tab" data-tab="help-tab">❓ Help</div>
     </div>
 
     <!-- ══════════════════════════════════════════════════════
