@@ -65,7 +65,6 @@
             width:60px;
         }
         body.sb-sidebar-closed .sb-brand-text       { opacity:0;width:0;pointer-events:none; }
-        body.sb-sidebar-closed .sb-collapse-btn     { transform:scaleX(-1); }
         body.sb-sidebar-closed .sb-section-label    { opacity:0;height:0;padding:0;overflow:hidden; }
         body.sb-sidebar-closed .sb-nav-label        { opacity:0;width:0;overflow:hidden;pointer-events:none; }
         body.sb-sidebar-closed .sb-nav-item         { justify-content:center;padding:11px 0;border-left-color:transparent !important; }
@@ -75,6 +74,24 @@
         body.sb-sidebar-closed .sb-project-list     { display:none; }
         body.sb-sidebar-closed .sb-footer           { display:none; }
         body.sb-sidebar-closed .sb-new-btn          { display:none; }
+
+        /* Mini mode: collapse btn stays visible, flips to point right (expand) */
+        body.sb-sidebar-closed .sb-collapse-btn {
+            transform: scaleX(-1);
+            margin-left: auto;
+            margin-right: auto;
+        }
+        /* In mini mode the brand row centers just logo + flipped btn */
+        body.sb-sidebar-closed .sb-brand {
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 12px 0;
+        }
+        body.sb-sidebar-closed .sb-brand-logo { margin: 0; }
+
+        /* Mini mode: show a thin expand-hint strip at bottom of nav icons */
+        body.sb-sidebar-closed .sb-mini-expand-hint { display:flex !important; }
 
         /* ── PWA install button ──────────────────────────────── */
         .sb-install-btn {
@@ -389,8 +406,8 @@
             <span class="sb-brand-name">DACUM Lite</span>
             <span class="sb-brand-tagline">Chart Generator</span>
         </div>
-        <!-- Collapse button — mirrors Claude's sidebar toggle -->
-        <button class="sb-collapse-btn" id="sbCollapseBtn" onclick="pmToggleSidebar()" title="Collapse sidebar" aria-label="Collapse sidebar">
+        <!-- Collapse / Expand button — always visible -->
+        <button class="sb-collapse-btn" id="sbCollapseBtn" onclick="pmToggleSidebar()" title="Toggle sidebar" aria-label="Toggle sidebar">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                 <rect x="1.5" y="1.5" width="13" height="13" rx="2.5" stroke="currentColor" stroke-width="1.4"/>
                 <line x1="5.5" y1="1.5" x2="5.5" y2="14.5" stroke="currentColor" stroke-width="1.4"/>
