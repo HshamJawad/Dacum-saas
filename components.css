@@ -679,8 +679,9 @@ body {
   transition: margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Desktop mini sidebar: appWrapper indented by mini width (handled in layout.css) */
 body.sb-sidebar-closed #appWrapper {
-  margin-left: 0;
+  margin-left: 60px;
 }
 
 /* ── Sidebar panel ────────────────────────────────────────────── */
@@ -697,11 +698,14 @@ body.sb-sidebar-closed #appWrapper {
   z-index: 1000;
   overflow: hidden;
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.45);
-  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Width transition handles desktop mini mode */
+  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Desktop: "collapsed" = mini (60px) — handled by body.sb-sidebar-closed
+   in the inline <style> block. No translateX on desktop. */
 #sidebar.sb-collapsed {
-  transform: translateX(-260px);
+  /* Legacy class — no longer used for desktop; kept for safety */
 }
 
 /* ── Section labels ────────────────────────────────────────────── */
@@ -716,6 +720,10 @@ body.sb-sidebar-closed #appWrapper {
   text-transform: uppercase;
   color: #3b4a6b;
   flex-shrink: 0;
+  /* Smooth hide in mini mode */
+  transition: opacity 0.2s, height 0.2s, padding 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .sb-section-label--projects {
@@ -764,8 +772,9 @@ body.sb-sidebar-closed #appWrapper {
   font-size: 0.875em;
   font-weight: 600;
   color: #94a3b8;
-  transition: color 0.15s;
+  transition: color 0.15s, opacity 0.2s, width 0.2s;
   white-space: nowrap;
+  overflow: hidden;
 }
 
 .sb-nav-item:hover .sb-nav-label {

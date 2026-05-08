@@ -212,29 +212,25 @@ function _switchToProject(id) {
 // ── Sidebar open/close ─────────────────────────────────────────
 function _setSidebarState(open) {
     _sidebarOpen = open;
-    const sidebar    = document.getElementById('sidebar');
-    const overlay    = document.getElementById('sidebarOverlay');
-    const collapseBtn = document.getElementById('sbCollapseBtn');
-    const body       = document.body;
-    const isMobile   = window.innerWidth <= 768;
+    const sidebar  = document.getElementById('sidebar');
+    const overlay  = document.getElementById('sidebarOverlay');
+    const body     = document.body;
+    const isMobile = window.innerWidth <= 768;
 
-    if (open) {
-        if (isMobile) {
-            // Mobile: slide in over content + show overlay
+    if (isMobile) {
+        // Mobile: slide in over content + show overlay
+        if (open) {
             sidebar?.classList.add('sb-mobile-open');
-            sidebar?.classList.remove('sb-collapsed');
             overlay?.classList.add('sb-overlay-visible');
         } else {
-            // Desktop: push content
-            sidebar?.classList.remove('sb-collapsed');
-            body.classList.remove('sb-sidebar-closed');
-        }
-    } else {
-        if (isMobile) {
             sidebar?.classList.remove('sb-mobile-open');
             overlay?.classList.remove('sb-overlay-visible');
+        }
+    } else {
+        // Desktop: toggle mini (60px icons) vs full (260px)
+        if (open) {
+            body.classList.remove('sb-sidebar-closed');
         } else {
-            sidebar?.classList.add('sb-collapsed');
             body.classList.add('sb-sidebar-closed');
         }
     }
