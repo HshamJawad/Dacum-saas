@@ -104,6 +104,9 @@
         }
         .sb-install-btn:hover { opacity:.9;transform:translateY(-1px); }
 
+        /* ── tb-mlabel: short label shown only on mobile ────── */
+        .tb-mlabel { display:none;font-size:0.6em;font-weight:600;line-height:1;margin-top:2px;text-align:center; }
+
         /* ── Mobile menu button (in toolbar) ────────────────── */
         .tb-mobile-menu { display:none !important; }
 
@@ -125,8 +128,6 @@
                 transform:translateX(0) !important;
                 box-shadow:8px 0 40px rgba(0,0,0,.6);
             }
-            /* On mobile, override desktop mini state — sidebar is always either
-               fully open (sb-mobile-open) or fully off-screen */
             body.sb-sidebar-closed #sidebar {
                 width:260px !important;
                 transform:translateX(-100%) !important;
@@ -135,39 +136,54 @@
             /* Content fills full width on mobile */
             #appWrapper {
                 margin-left:0 !important;
-                padding:72px 10px 20px !important;
+                padding:78px 10px 20px !important;
             }
             .top-toolbar {
                 left:0 !important;
-                padding:0 6px !important;
+                padding:0 4px !important;
                 gap:2px !important;
+                height:64px !important;
                 overflow-x:auto;
                 overflow-y:hidden;
-                /* Hide scrollbar visually */
                 scrollbar-width:none;
+                align-items:center;
             }
             .top-toolbar::-webkit-scrollbar { display:none; }
             .top-toolbar-spacer  { display:none !important; }
             .top-toolbar-divider { display:none !important; }
 
-            /* Icon-only toolbar buttons on mobile */
+            /* Mobile: icon-only + label stacked vertically */
             .tb-label { display:none !important; }
+            .tb-mlabel { display:block !important; }
             .tb-btn {
-                padding:0 !important;
-                width:36px !important;
-                height:36px !important;
-                min-width:36px !important;
+                padding:4px 4px 5px !important;
+                width:46px !important;
+                height:52px !important;
+                min-width:46px !important;
+                flex-direction:column !important;
                 justify-content:center !important;
-                font-size:1.1em !important;
+                align-items:center !important;
+                gap:1px !important;
+                font-size:0.7em !important;
                 flex-shrink:0;
+                border-radius:10px !important;
             }
-            .tb-icon { font-size:1.15em;line-height:1; }
+            .tb-icon { font-size:1.35em;line-height:1; }
 
-            /* Hide collapse btn on mobile (overlay handles close) */
+            /* Collapse btn hidden on mobile */
             .sb-collapse-btn { display:none; }
 
             /* Container padding */
             .container { padding:20px 12px; border-radius:12px; }
+
+            /* ── Wall view: compact two-row topbar ──────────── */
+            .wv-topbar-row { padding:5px 8px;gap:5px; }
+            .wv-topbar-row--controls { flex-wrap:wrap; }
+            .wv-btn { padding:5px 8px;font-size:.75em;gap:3px; }
+            .wv-zoom-label { padding:0 7px;min-width:38px;font-size:.75em; }
+            .wv-btn--zoom { padding:5px 8px; }
+            .wv-title { font-size:.82em; }
+            .wv-view-tab { padding:4px 9px;font-size:.75em; }
         }
 
         /* ── Notch / safe area support ───────────────────────── */
@@ -218,8 +234,24 @@
            ══════════════════════════════════════════════════════ */
         .wv-container { display:none;position:fixed;inset:0;z-index:3000;background:#eef2f7;flex-direction:column;overflow:hidden;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; }
         .wv-container.wv-visible { display:flex; }
-        .wv-topbar { display:flex;align-items:center;padding:8px 16px;background:#fff;border-bottom:1px solid #e2e8f0;flex-shrink:0;gap:8px;min-height:52px; }
-        .wv-title { font-size:1em;font-weight:700;color:#1e293b;margin:0;white-space:nowrap;flex:1;text-align:center; }
+        /* Desktop: topbar is a column of two rows */
+        .wv-topbar {
+            display:flex;flex-direction:column;
+            background:#fff;border-bottom:1px solid #e2e8f0;
+            flex-shrink:0;
+        }
+        .wv-topbar-row {
+            display:flex;align-items:center;gap:8px;
+            padding:6px 14px;
+        }
+        .wv-topbar-row--controls {
+            border-bottom:1px solid #f1f5f9;
+            flex-wrap:wrap;
+        }
+        .wv-topbar-row--nav {
+            gap:10px;
+        }
+        .wv-title { font-size:.95em;font-weight:700;color:#1e293b;margin:0;white-space:nowrap;flex:1; }
         .wv-view-tabs { display:flex;gap:4px;background:#f1f5f9;padding:3px;border-radius:9px;flex-shrink:0; }
         .wv-view-tab { padding:5px 13px;font-size:.8em;font-weight:600;border:none;border-radius:6px;cursor:pointer;background:transparent;color:#64748b;transition:all .15s;white-space:nowrap; }
         .wv-view-tab:hover { background:#e2e8f0;color:#1e293b; }
@@ -507,7 +539,7 @@
                     type="button"
                     onclick="promptSnapshot()"
                     title="Save a named snapshot of the current state">
-                <span class="tb-icon">📸</span><span class="tb-label"> Snapshot</span>
+                <span class="tb-icon">📸</span><span class="tb-label"> Snapshot</span><span class="tb-mlabel">Snapshot</span>
             </button>
         </div>
 
@@ -519,14 +551,14 @@
                     type="button"
                     onclick="exportProjectFile()"
                     title="Export the active project as a versioned JSON file">
-                <span class="tb-icon">📤</span><span class="tb-label"> Export Project</span>
+                <span class="tb-icon">📤</span><span class="tb-label"> Export Project</span><span class="tb-mlabel">Export</span>
             </button>
             <button id="btnImportProject"
                     class="tb-btn tb-btn--neutral"
                     type="button"
                     onclick="document.getElementById('importProjectInput').click()"
                     title="Import a previously exported project JSON file">
-                <span class="tb-icon">📥</span><span class="tb-label"> Import Project</span>
+                <span class="tb-icon">📥</span><span class="tb-label"> Import Project</span><span class="tb-mlabel">Import</span>
             </button>
         </div>
 
@@ -538,14 +570,14 @@
                     type="button"
                     onclick="exportToPDF()"
                     title="Export the DACUM chart as a PDF document">
-                <span class="tb-icon">📄</span><span class="tb-label"> PDF</span>
+                <span class="tb-icon">📄</span><span class="tb-label"> PDF</span><span class="tb-mlabel">PDF</span>
             </button>
             <button id="btnExportWord"
                     class="tb-btn tb-btn--neutral"
                     type="button"
                     onclick="exportToWord()"
                     title="Export the DACUM chart as a Word (DOCX) document">
-                <span class="tb-icon">📝</span><span class="tb-label"> Word</span>
+                <span class="tb-icon">📝</span><span class="tb-label"> Word</span><span class="tb-mlabel">Word</span>
             </button>
         </div>
 
@@ -557,7 +589,7 @@
                     type="button"
                     onclick="clearAll()"
                     title="Clear all data from the current chart">
-                <span class="tb-icon">🗑️</span><span class="tb-label"> Clear All</span>
+                <span class="tb-icon">🗑️</span><span class="tb-label"> Clear All</span><span class="tb-mlabel">Clear</span>
             </button>
         </div>
 
@@ -574,7 +606,7 @@
                     onclick="undo()"
                     disabled
                     title="Undo (Ctrl+Z)">
-                <span class="tb-icon">↩</span><span class="tb-label"> Undo</span>
+                <span class="tb-icon">↩</span><span class="tb-label"> Undo</span><span class="tb-mlabel">Undo</span>
             </button>
             <button id="floatRedoBtn"
                     class="tb-btn tb-btn--ghost"
@@ -582,7 +614,7 @@
                     onclick="redo()"
                     disabled
                     title="Redo (Ctrl+Y)">
-                <span class="tb-icon">↪</span><span class="tb-label"> Redo</span>
+                <span class="tb-icon">↪</span><span class="tb-label"> Redo</span><span class="tb-mlabel">Redo</span>
             </button>
             <button id="debugBtn"
                     class="tb-btn tb-btn--ghost"
@@ -917,20 +949,26 @@
      ═══════════════════════════════════════════════════════════ -->
 <div id="wallViewContainer" class="wv-container">
     <div class="wv-topbar">
-        <button class="wv-btn wv-btn--exit" onclick="exitWallView()">✕ Exit</button>
-        <div class="wv-zoom-group">
-            <button class="wv-btn wv-btn--zoom" onclick="wallViewZoom(-5)" title="Zoom out −5%">🔍−</button>
-            <span class="wv-zoom-label" id="wvZoomLevel">100%</span>
-            <button class="wv-btn wv-btn--zoom" onclick="wallViewZoom(+5)" title="Zoom in +5%">🔍+</button>
+        <!-- Row 1: controls -->
+        <div class="wv-topbar-row wv-topbar-row--controls">
+            <button class="wv-btn wv-btn--exit" onclick="exitWallView()">✕ Exit</button>
+            <div class="wv-zoom-group">
+                <button class="wv-btn wv-btn--zoom" onclick="wallViewZoom(-5)" title="Zoom out −5%">🔍−</button>
+                <span class="wv-zoom-label" id="wvZoomLevel">100%</span>
+                <button class="wv-btn wv-btn--zoom" onclick="wallViewZoom(+5)" title="Zoom in +5%">🔍+</button>
+            </div>
+            <button class="wv-btn" onclick="resetWallZoom()" title="Reset zoom">↺ Reset</button>
+            <button class="wv-btn wv-btn--print" onclick="printWallView()">🖨️ Print</button>
+            <button class="wv-btn" id="wvFullscreenBtn" onclick="toggleWallFullscreen()">⛶ Full</button>
         </div>
-        <button class="wv-btn" onclick="resetWallZoom()" title="Reset zoom">↺ Reset</button>
-        <span class="wv-title">🧱 Wall View — DACUM Research Chart</span>
-        <button class="wv-btn wv-btn--print" onclick="printWallView()">🖨️ Print</button>
-        <button class="wv-btn" id="wvFullscreenBtn" onclick="toggleWallFullscreen()">⛶ Fullscreen</button>
-        <div class="wv-view-tabs">
-            <button class="wv-view-tab" onclick="exitWallView(); showCardView();">🃏 Card</button>
-            <button class="wv-view-tab" onclick="exitWallView(); showTableView();">📋 Table</button>
-            <button class="wv-view-tab wv-view-tab--active">🧱 Wall</button>
+        <!-- Row 2: title + view switcher -->
+        <div class="wv-topbar-row wv-topbar-row--nav">
+            <span class="wv-title">🧱 Wall View</span>
+            <div class="wv-view-tabs">
+                <button class="wv-view-tab" onclick="exitWallView(); showCardView();">🃏 Card</button>
+                <button class="wv-view-tab" onclick="exitWallView(); showTableView();">📋 Table</button>
+                <button class="wv-view-tab wv-view-tab--active">🧱 Wall</button>
+            </div>
         </div>
     </div>
     <div class="wv-scroll-area" id="wvScrollArea">
