@@ -418,10 +418,13 @@ window.addEventListener('DOMContentLoaded', () => {
     EventBinder.init();
     renderSidebar();
 
-    // ── 4b. Re-render sidebar on language change ───────────────
-    // applyTranslations() handles static DOM; sidebar is dynamic
-    // so we re-render it whenever the language is toggled.
-    document.addEventListener('dacum:langchange', () => renderSidebar());
+    // ── 4b. Re-render sidebar + all views on language change ───────────────
+    // applyTranslations() handles static DOM; dynamic content
+    // (sidebar cards, renderer labels, snapshot list) needs a full re-render.
+    document.addEventListener('dacum:langchange', () => {
+        renderSidebar();
+        Renderer.renderAll(StateManager.state);
+    });
 
     // ── 5. Sidebar initial state (mobile starts closed) ────────
     if (window.innerWidth <= 768) {

@@ -1,7 +1,8 @@
 // ============================================================
 // renderer.js — DOM Rendering Layer  (DACUM Lite v3.1)
 // ============================================================
-import { AppState, StateManager } from './state.js';
+import { t }                        from './i18n.js';
+import { AppState, StateManager }   from './state.js';
 import {
     pushCommand,
     makeEditDutyCmd,
@@ -33,7 +34,7 @@ function getDutyLetter(idx) {
     return L[Math.floor(idx / 26) - 1] + L[idx % 26];
 }
 
-function dutyLabel(idx)              { return 'Duty ' + getDutyLetter(idx); }
+function dutyLabel(idx) { return t('renderer.dutyLabel', { letter: getDutyLetter(idx) }); }
 function taskLabel(dutyIdx, taskIdx) { return getDutyLetter(dutyIdx) + (taskIdx + 1); }
 
 // ══════════════════════════════════════════════════════════════
@@ -317,7 +318,7 @@ export const Renderer = {
             const dragHandle = document.createElement('span');
             dragHandle.className = 'duty-drag-handle';
             dragHandle.textContent = '⠿';
-            dragHandle.title = 'Drag to reorder duties';
+            dragHandle.title = t('renderer.dragDuty');
 
             const heading = document.createElement('h4');
             heading.textContent = dutyLabel(idx);   // "Duty A", "Duty B" …
@@ -325,11 +326,11 @@ export const Renderer = {
             const actions = document.createElement('div');
             actions.className = 'duty-header-actions';
             actions.appendChild(createButton({
-                type: 'clear-section', label: '🗑️ Clear',
+                type: 'clear-section', label: t('renderer.clearDutyBtn'),
                 onClick: () => _actions.clearDuty && _actions.clearDuty(duty.id)
             }));
             actions.appendChild(createButton({
-                type: 'remove', label: '🗑️ Remove Duty',
+                type: 'remove', label: t('renderer.removeDutyBtn'),
                 onClick: () => _actions.removeDuty && _actions.removeDuty(duty.id)
             }));
 
@@ -341,7 +342,7 @@ export const Renderer = {
             // Duty description input
             const dutyInput = document.createElement('input');
             dutyInput.type = 'text';
-            dutyInput.placeholder = 'Enter duty description';
+            dutyInput.placeholder = t('renderer.dutyPlaceholder');
             dutyInput.setAttribute('data-duty-id', duty.id);
             dutyInput.value = duty.title;
 
@@ -371,7 +372,7 @@ export const Renderer = {
 
             // Add Task button
             dutyDiv.appendChild(createButton({
-                type: 'add', label: '➕ Add Task',
+                type: 'add', label: t('renderer.addTaskBtn'),
                 onClick: () => _actions.addTask && _actions.addTask(duty.id)
             }));
 
@@ -390,7 +391,7 @@ export const Renderer = {
             const dragHandle = document.createElement('span');
             dragHandle.className = 'task-drag-handle';
             dragHandle.textContent = '⠿';
-            dragHandle.title = 'Drag to reorder or move to another duty';
+            dragHandle.title = t('renderer.dragTask');
 
             const label = document.createElement('span');
             label.className = 'task-label';
@@ -399,7 +400,7 @@ export const Renderer = {
             const taskInput = document.createElement('input');
             taskInput.type = 'text';
             taskInput.style.flex = '1';
-            taskInput.placeholder = 'Enter task description';
+            taskInput.placeholder = t('renderer.taskPlaceholder');
             taskInput.setAttribute('data-task-id', task.id);
             taskInput.value = task.text;
 
@@ -439,8 +440,8 @@ export const Renderer = {
 
         if (!state.duties || state.duties.length === 0) {
             chart.innerHTML =
-                '<p style="color:#64748b;font-style:italic;padding:24px 0;">No duties added yet. ' +
-                'Go to the Duties & Tasks tab to add duties.</p>';
+                '<p style="color:#64748b;font-style:italic;padding:24px 0;">' +
+                t('renderer.wallNoDuties') + '</p>';
             return;
         }
 
@@ -473,11 +474,11 @@ export const Renderer = {
             const dutyDragHandle = document.createElement('span');
             dutyDragHandle.className = 'wv-duty-drag-handle';
             dutyDragHandle.textContent = '⠿';
-            dutyDragHandle.title = 'Drag to reorder duties';
+            dutyDragHandle.title = t('renderer.wallDragDuty');
 
             const badge = document.createElement('span');
             badge.className = 'wv-duty-badge';
-            badge.textContent = 'Duty ' + letter;
+            badge.textContent = t('renderer.wallDutyBadge', { letter });
 
             const badgeLeft = document.createElement('div');
             badgeLeft.className = 'wv-duty-badge-left';
@@ -485,7 +486,7 @@ export const Renderer = {
             badgeLeft.appendChild(badge);
 
             // ＋ Add new duty below this one
-            const addTaskBtn = _icBtn('＋', 'Add new duty below',
+            const addTaskBtn = _icBtn('＋', t('renderer.wallAddDutyTitle'),
                 'wv-ic-btn--duty-add',
                 () => {
                     if (_actions.addDuty) {
@@ -496,10 +497,10 @@ export const Renderer = {
             );
 
             // ✕ Delete duty
-            const delDutyBtn = _icBtn('✕', 'Delete this duty',
+            const delDutyBtn = _icBtn('✕', t('renderer.wallDelDutyTitle'),
                 'wv-ic-btn--duty-del',
                 () => {
-                    if (confirm('Delete "' + (duty.title || 'this duty') + '" and all its tasks?')) {
+                    if (confirm(t('renderer.wallDelDutyConfirm', { title: duty.title || '' }))) {
                         if (_actions.removeDuty) {
                             _actions.removeDuty(duty.id);
                             Renderer.renderWallView(StateManager.state);
@@ -521,7 +522,7 @@ export const Renderer = {
             const titleEl = createEditable({
                 className: 'wv-duty-title',
                 text: duty.title,
-                placeholder: 'Enter duty…',
+                placeholder: t('renderer.wallDutyPlaceholder'),
                 onFocus: () => { titleEl._prev = duty.title; },
                 onInput: () => { duty.title = titleEl.textContent; },
                 onBlur:  () => {
@@ -540,7 +541,7 @@ export const Renderer = {
             if (duty.tasks.length === 0) {
                 const empty = document.createElement('div');
                 empty.className = 'wv-no-tasks';
-                empty.textContent = 'No tasks yet — drop here or use ＋';
+                empty.textContent = t('renderer.wallNoTasks');
                 grid.appendChild(empty);
             } else {
                 duty.tasks.forEach((task, tIdx) => {
@@ -554,11 +555,11 @@ export const Renderer = {
                     const taskDragHandle = document.createElement('span');
                     taskDragHandle.className = 'wv-task-drag-handle';
                     taskDragHandle.textContent = '⠿';
-                    taskDragHandle.title = 'Drag to reorder or move to another duty';
+                    taskDragHandle.title = t('renderer.wallDragTask');
 
                     const lbl = document.createElement('span');
                     lbl.className = 'wv-task-label';
-                    lbl.textContent = 'Task ' + letter + (tIdx + 1);
+                    lbl.textContent = t('renderer.wallTaskLabel', { letter, n: tIdx + 1 });
 
                     const taskLabelLeft = document.createElement('div');
                     taskLabelLeft.className = 'wv-task-label-left';
@@ -566,7 +567,7 @@ export const Renderer = {
                     taskLabelLeft.appendChild(lbl);
 
                     // ＋ Add new task after this one
-                    const addAfterBtn = _icBtn('＋', 'Add new task after this one',
+                    const addAfterBtn = _icBtn('＋', t('renderer.wallAddTaskTitle'),
                         'wv-ic-btn--task-add',
                         () => {
                             if (_actions.addTask) {
@@ -577,7 +578,7 @@ export const Renderer = {
                     );
 
                     // ✕ Delete this task
-                    const delTaskBtn = _icBtn('✕', 'Delete this task',
+                    const delTaskBtn = _icBtn('✕', t('renderer.wallDelTaskTitle'),
                         'wv-ic-btn--task-del',
                         () => {
                             if (_actions.removeTask) {
@@ -599,7 +600,7 @@ export const Renderer = {
                     const taskTextEl = createEditable({
                         className: 'wv-task-text',
                         text: task.text,
-                        placeholder: 'Enter task…',
+                        placeholder: t('renderer.wallTaskPlaceholder'),
                         onFocus: () => { taskTextEl._prev = task.text; },
                         onInput: () => { task.text = taskTextEl.textContent; },
                         onBlur:  () => {
@@ -632,7 +633,7 @@ export const Renderer = {
         inner.innerHTML = '';
 
         if (state.duties.length === 0) {
-            inner.innerHTML = '<p style="color:#a16207;font-style:italic;padding:12px;">No duties added yet.</p>';
+            inner.innerHTML = '<p style="color:#a16207;font-style:italic;padding:12px;">' + t('renderer.noDuties') + '</p>';
             return;
         }
 
@@ -646,15 +647,15 @@ export const Renderer = {
             const dutyDragHandle = document.createElement('span');
             dutyDragHandle.className = 'duty-drag-handle cv-duty-drag-handle';
             dutyDragHandle.textContent = '⠿';
-            dutyDragHandle.title = 'Drag to reorder duties';
+            dutyDragHandle.title = t('renderer.dragDuty');
 
             const dutyIndexLabel = createHeader({ type: 'duty', index: letter });
 
             const deleteDutyBtn = createDeleteCircle({
-                type: 'duty', title: 'Remove duty',
+                type: 'duty', title: t('renderer.removeDutyTitle'),
                 onClick(e) {
                     e.stopPropagation();
-                    if (confirm('Remove this duty and all its tasks?'))
+                    if (confirm(t('confirm.removeDuty')))
                         _actions.removeDuty && _actions.removeDuty(duty.id);
                 }
             });
@@ -666,7 +667,7 @@ export const Renderer = {
             topRow.appendChild(deleteDutyBtn);
 
             const dutyTextEl = createEditable({
-                className: 'cv-duty-text', text: duty.title, placeholder: 'Enter duty',
+                className: 'cv-duty-text', text: duty.title, placeholder: t('renderer.dutyPlaceholderCard'),
                 onFocus: () => { dutyTextEl._prev = duty.title; },
                 onInput: () => { duty.title = dutyTextEl.textContent; },
                 onBlur:  () => {
@@ -689,21 +690,21 @@ export const Renderer = {
             if (duty.tasks.length === 0) {
                 const empty = document.createElement('div');
                 empty.className = 'cv-empty-note';
-                empty.textContent = 'No tasks yet.';
+                empty.textContent = t('renderer.noTasks');
                 tasksWrapper.appendChild(empty);
             } else {
                 duty.tasks.forEach((task, tIdx) => {
                     const taskDragHandle = document.createElement('span');
                     taskDragHandle.className = 'task-drag-handle cv-task-drag-handle';
                     taskDragHandle.textContent = '⠿';
-                    taskDragHandle.title = 'Drag to reorder or move task';
+                    taskDragHandle.title = t('renderer.dragTaskCard');
 
                     const labelEl = document.createElement('div');
                     labelEl.className = 'cv-task-label';
                     labelEl.textContent = taskLabel(idx, tIdx);   // "A1", "B3"…
 
                     const deleteTaskBtn = createDeleteCircle({
-                        type: 'task', title: 'Remove task',
+                        type: 'task', title: t('renderer.removeTaskTitle'),
                         onClick(e) {
                             e.stopPropagation();
                             _actions.removeTask && _actions.removeTask(task.id);
@@ -711,7 +712,7 @@ export const Renderer = {
                     });
 
                     const taskTextEl = createEditable({
-                        className: 'cv-task-text', text: task.text, placeholder: 'Enter task',
+                        className: 'cv-task-text', text: task.text, placeholder: t('renderer.taskPlaceholderCard'),
                         onFocus: () => { taskTextEl._prev = task.text; },
                         onInput: () => { task.text = taskTextEl.textContent; },
                         onBlur:  () => {
@@ -742,8 +743,8 @@ export const Renderer = {
 
             const addTaskBtn = document.createElement('button');
             addTaskBtn.className = 'cv-add-task';
-            addTaskBtn.innerHTML = '➕ Task';
-            addTaskBtn.title = 'Add task to this duty';
+            addTaskBtn.innerHTML = t('renderer.addTaskCard');
+            addTaskBtn.title = t('renderer.addTaskCardTitle');
             addTaskBtn.addEventListener('click', () => _actions.addTask && _actions.addTask(duty.id));
             tasksWrapper.appendChild(addTaskBtn);
 

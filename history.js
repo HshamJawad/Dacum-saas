@@ -1,9 +1,10 @@
 // ============================================================
 // history.js — Command-Based Undo / Redo System
 // ============================================================
-import { AppState, StateManager } from './state.js';
-import { saveToLocalStorage } from './storage.js';
-import { showStatus } from './design-system.js';
+import { t }                        from './i18n.js';
+import { AppState, StateManager }   from './state.js';
+import { saveToLocalStorage }       from './storage.js';
+import { showStatus }               from './design-system.js';
 
 // ── Utilities ────────────────────────────────────────────────
 export function deepClone(obj) {
@@ -42,7 +43,7 @@ export function undo() {
     saveToLocalStorage();
     updateHistoryButtons();
     if (_renderFn) _renderFn(StateManager.state);
-    showStatus('↩ Undone: ' + cmd.type, 'success');
+    showStatus(t('status.undone', { type: cmd.type }), 'success');
 }
 
 // ── Redo ─────────────────────────────────────────────────────
@@ -54,7 +55,7 @@ export function redo() {
     saveToLocalStorage();
     updateHistoryButtons();
     if (_renderFn) _renderFn(StateManager.state);
-    showStatus('↪ Redone: ' + cmd.type, 'success');
+    showStatus(t('status.redone', { type: cmd.type }), 'success');
 }
 
 // ── Update UI button states ───────────────────────────────────
@@ -276,7 +277,7 @@ export const SnapshotManager = {
 };
 
 export function createSnapshot(label) {
-    label = label || ('Snapshot ' + (AppState.snapshots.length + 1));
+    label = label || t('snapshot.autoName', { n: AppState.snapshots.length + 1 });
     AppState.snapshots.push({
         label,
         timestamp: new Date().toISOString(),
@@ -285,7 +286,7 @@ export function createSnapshot(label) {
     if (AppState.snapshots.length > 20) AppState.snapshots.shift();
     saveToLocalStorage();
     refreshSnapshotList();
-    showStatus('Snapshot saved: "' + label + '" ✓', 'success');
+    showStatus(t('status.snapshotSaved', { label }), 'success');
 }
 
 export function restoreSnapshot(index) {
@@ -311,11 +312,11 @@ export function restoreSnapshot(index) {
     saveToLocalStorage();
     refreshSnapshotList();
     if (_renderFn) _renderFn(StateManager.state);
-    showStatus('Snapshot restored: "' + snap.label + '" ✓', 'success');
+    showStatus(t('status.snapshotRestored', { label: snap.label }), 'success');
 }
 
 export function promptSnapshot() {
-    const label = prompt('Name this snapshot (leave blank for auto-name):', '');
+    const label = prompt(t('snapshot.prompt'), '');
     if (label === null) return;
     createSnapshot(label.trim() || undefined);
 }
@@ -325,7 +326,7 @@ export function refreshSnapshotList() {
     if (!list) return;
     const snaps = AppState.snapshots;
     if (!snaps || snaps.length === 0) {
-        list.innerHTML = '<div class="snap-empty">No snapshots yet. Click 📸 to save one.</div>';
+        list.innerHTML = '<div class="snap-empty">' + t('snapshot.empty') + '</div>';
         return;
     }
     list.innerHTML = '';
@@ -337,14 +338,19 @@ export function refreshSnapshotList() {
         const dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
         const dutyLen = (snap.state && Array.isArray(snap.state.duties))
                         ? snap.state.duties.length : 0;
+        const dutyStr = dutyLen === 1
+            ? t('snapshot.dutyCount.one')
+            : t('snapshot.dutyCount.other', { n: dutyLen });
         const item = document.createElement('div');
         item.className = 'snap-item';
         item.innerHTML =
             '<div>' +
                 '<div class="snap-item-label">' + escapeHtml(snap.label) + '</div>' +
-                '<div class="snap-item-time">' + dateStr + ' ' + timeStr + ' · ' + dutyLen + ' duties</div>' +
+                '<div class="snap-item-time">' + dateStr + ' ' + timeStr + ' · ' + dutyStr + '</div>' +
             '</div>' +
-            '<button class="snap-restore-btn" onclick="window.restoreSnapshot(' + realIdx + '); window.toggleSnapshotPanel();">Restore</button>';
+            '<button class="snap-restore-btn" onclick="window.restoreSnapshot(' + realIdx + '); window.toggleSnapshotPanel();">' +
+                t('snapshot.restore') +
+            '</button>';
         list.appendChild(item);
     });
 }
