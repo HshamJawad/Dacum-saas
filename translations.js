@@ -351,6 +351,10 @@ export const translations = {
         'help.linkedinLabel':    'LINKEDIN',
         'help.getInTouchTitle':  'Get in Touch',
         'help.getInTouchText':   'For questions, feedback, suggestions, or collaboration opportunities, please reach out using the contact information above.',
+
+        // Disclaimer — shown only in Help tab
+        'help.disclaimerTitle':  'Disclaimer',
+        'help.disclaimerText':   'This tool is provided "as is" without warranty of any kind. The developer assumes no responsibility for any inaccuracies, errors, omissions, or inconsistencies in the generated documents. Users are solely responsible for verifying and validating all content before use.',
     },
 
     // ══════════════════════════════════════════════════════════
@@ -682,5 +686,9 @@ export const translations = {
         'help.linkedinLabel':   'لينكد إن',
         'help.getInTouchTitle': 'تواصل معنا',
         'help.getInTouchText':  'للاستفسارات والملاحظات والاقتراحات وفرص التعاون، يرجى التواصل عبر معلومات الاتصال أعلاه.',
+
+        // Disclaimer — shown only in Help tab
+        'help.disclaimerTitle': 'إخلاء مسؤولية',
+        'help.disclaimerText':  'تُقدَّم هذه الأداة "كما هي" دون أي ضمان من أي نوع. لا يتحمل المطوّر أي مسؤولية عن أي معلومات غير دقيقة أو أخطاء أو حذف أو تناقضات في الوثائق المُنشأة. يتحمل المستخدمون المسؤولية الكاملة عن التحقق من جميع المحتويات قبل استخدامها.',
     }
 };

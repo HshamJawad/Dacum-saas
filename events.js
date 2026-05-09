@@ -1205,3 +1205,151 @@ export const EventBinder = {
         });
     }
 };
+
+// ══════════════════════════════════════════════════════════════
+//  PROJECT SERIALISATION HELPERS
+//  Called by app.js to save/restore all DOM-resident data that
+//  is NOT part of AppState (chart info fields, additional info,
+//  custom sections, logo images).
+//  These are injected into the ProjectRecord alongside `state`
+//  so per-project data survives export/import.
+// ══════════════════════════════════════════════════════════════
+
+/** Read chart-info form fields + logo images from the DOM */
+export function getChartInfoData() {
+    return {
+        dacumDate:      document.getElementById('dacumDate')?.value      || '',
+        producedFor:    document.getElementById('producedFor')?.value    || '',
+        producedBy:     document.getElementById('producedBy')?.value     || '',
+        occupationTitle:document.getElementById('occupationTitle')?.value|| '',
+        jobTitle:       document.getElementById('jobTitle')?.value       || '',
+        scopeOfWork:    document.getElementById('scopeOfWork')?.value    || '',
+        facilitators:   document.getElementById('facilitators')?.value   || '',
+        observers:      document.getElementById('observers')?.value      || '',
+        panelMembers:   document.getElementById('panelMembers')?.value   || '',
+        producedForImage: producedForImage || null,
+        producedByImage:  producedByImage  || null,
+    };
+}
+
+/** Restore chart-info fields + logos to the DOM */
+export function applyChartInfoData(info) {
+    if (!info || typeof info !== 'object') return;
+    const set = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined) el.value = val; };
+    set('dacumDate',       info.dacumDate);
+    set('producedFor',     info.producedFor);
+    set('producedBy',      info.producedBy);
+    set('occupationTitle', info.occupationTitle);
+    set('jobTitle',        info.jobTitle);
+    set('scopeOfWork',     info.scopeOfWork);
+    set('facilitators',    info.facilitators);
+    set('observers',       info.observers);
+    set('panelMembers',    info.panelMembers);
+
+    // Restore logo images
+    _restoreImagePreview('producedFor', info.producedForImage);
+    _restoreImagePreview('producedBy',  info.producedByImage);
+}
+
+function _restoreImagePreview(type, imageData) {
+    const cap       = type.charAt(0).toUpperCase() + type.slice(1);
+    const preview   = document.getElementById(type + 'ImagePreview');
+    const removeBtn = document.getElementById('remove' + cap + 'Image');
+    if (imageData) {
+        if (type === 'producedFor') producedForImage = imageData;
+        else                        producedByImage  = imageData;
+        if (preview) {
+            preview.innerHTML = `<img src="${imageData}" alt="Logo" style="max-width:100%;max-height:100%;object-fit:contain;">`;
+            preview.classList.add('has-image');
+        }
+        if (removeBtn) removeBtn.style.display = '';
+    } else {
+        if (type === 'producedFor') producedForImage = null;
+        else                        producedByImage  = null;
+        if (preview) {
+            const noImgText = document.documentElement.lang === 'ar' ? 'لا توجد صورة' : 'No image';
+            preview.innerHTML = `<span class="image-preview-placeholder">${noImgText}</span>`;
+            preview.classList.remove('has-image');
+        }
+        if (removeBtn) removeBtn.style.display = 'none';
+    }
+}
+
+/** Read additional-info textareas + headings from the DOM */
+export function getAdditionalInfoData() {
+    const fixed = [
+        { inputId: 'knowledgeInput',  headingId: 'knowledgeHeading'  },
+        { inputId: 'skillsInput',     headingId: 'skillsHeading'     },
+        { inputId: 'behaviorsInput',  headingId: 'behaviorsHeading'  },
+        { inputId: 'toolsInput',      headingId: 'toolsHeading'      },
+        { inputId: 'trendsInput',     headingId: 'trendsHeading'     },
+        { inputId: 'acronymsInput',   headingId: 'acronymsHeading'   },
+        { inputId: 'careerPathInput', headingId: 'careerPathHeading' },
+    ].map(({ inputId, headingId }) => ({
+        inputId,
+        headingId,
+        content: document.getElementById(inputId)?.value  || '',
+        heading: document.getElementById(headingId)?.textContent?.trim() || '',
+    }));
+
+    // Custom sections
+    const custom = [];
+    const container = document.getElementById('customSectionsContainer');
+    if (container) {
+        container.querySelectorAll('.section-container').forEach(sec => {
+            const h3    = sec.querySelector('h3');
+            const ta    = sec.querySelector('textarea');
+            if (h3 && ta) {
+                custom.push({
+                    id:      sec.id,
+                    heading: h3.textContent.trim(),
+                    content: ta.value,
+                });
+            }
+        });
+    }
+    return { fixed, custom };
+}
+
+/** Restore additional-info textareas + headings + custom sections */
+export function applyAdditionalInfoData(info) {
+    if (!info || typeof info !== 'object') return;
+
+    // Fixed sections
+    if (Array.isArray(info.fixed)) {
+        info.fixed.forEach(({ inputId, headingId, content, heading }) => {
+            const input   = document.getElementById(inputId);
+            const headEl  = document.getElementById(headingId);
+            if (input)  input.value = content  || '';
+            if (headEl) headEl.textContent = heading || headEl.textContent;
+        });
+    }
+
+    // Custom sections — rebuild DOM
+    const container = document.getElementById('customSectionsContainer');
+    if (container && Array.isArray(info.custom)) {
+        container.innerHTML = '';
+        customSectionCounter = 0;
+        info.custom.forEach(sec => {
+            customSectionCounter++;
+            const sectionId = `customSection${customSectionCounter}`;
+            const headingId = `${sectionId}Heading`;
+            const inputId   = `${sectionId}Input`;
+            const div = document.createElement('div');
+            div.className = 'section-container';
+            div.id = sectionId;
+            div.innerHTML = `
+                <div class="section-header-editable">
+                    <h3 id="${headingId}" contenteditable="false">${sec.heading || ''}</h3>
+                    <div class="section-header-actions">
+                        <button class="btn-rename" onclick="window.toggleEditHeading('${headingId}')">✏️ Rename</button>
+                        <button class="btn-clear-section" onclick="window.clearSection('${inputId}','${headingId}','${sec.heading || ''}')">🗑️ Clear</button>
+                        <button class="btn-remove-section" onclick="window.removeCustomSection('${sectionId}')">❌ Remove</button>
+                    </div>
+                </div>
+                <textarea id="${inputId}" placeholder="Enter information for this custom section on separate lines">${sec.content || ''}</textarea>
+            `;
+            container.appendChild(div);
+        });
+    }
+}

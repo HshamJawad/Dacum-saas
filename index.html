@@ -381,6 +381,22 @@
         .hc-getintouch strong { color:#b45309;display:block;margin-bottom:3px;font-size:1em; }
         .hc-getintouch p { margin:0; }
 
+        /* Disclaimer block — inside Help tab only */
+        .hc-disclaimer {
+            display:flex;gap:12px;
+            background:#f8fafc;
+            border:1px solid #e2e8f0;
+            border-radius:10px;
+            padding:14px 16px;
+            margin-top:24px;
+            font-size:.82em;
+            color:#64748b;
+            line-height:1.6;
+        }
+        .hc-disclaimer-icon { font-size:1.2em;flex-shrink:0;margin-top:1px; }
+        .hc-disclaimer strong { color:#475569;display:block;margin-bottom:4px;font-size:.95em; }
+        .hc-disclaimer p { margin:0; }
+
         /* ══ LANGUAGE TOGGLE BUTTON ═══════════════════════════ */
         .sb-lang-btn {
             display:flex;align-items:center;justify-content:center;
@@ -1023,16 +1039,21 @@
                 <div class="hc-getintouch"><span style="font-size:1.3em;">💡</span><div><strong data-i18n="help.getInTouchTitle">Get in Touch</strong><p data-i18n="help.getInTouchText">For questions, feedback, suggestions, or collaboration opportunities, please reach out using the contact information above.</p></div></div>
             </div>
         </div>
+
+        <!-- Disclaimer — shown only in Help tab -->
+        <div class="hc-disclaimer">
+            <span class="hc-disclaimer-icon">⚠️</span>
+            <div>
+                <strong data-i18n="help.disclaimerTitle">Disclaimer</strong>
+                <p data-i18n="help.disclaimerText">This tool is provided "as is" without warranty of any kind. The developer assumes no responsibility for any inaccuracies, errors, omissions, or inconsistencies in the generated documents. Users are solely responsible for verifying and validating all content before use.</p>
+            </div>
+        </div>
+
     </div><!-- /#help-tab -->
 
     <!-- Copyright ─────────────────────────────────────── -->
     <div class="copyright">
         <p class="copyright-main" data-i18n="copyright.main">© 2026 DACUM Lite | by Husham Jawad Kadhim | Version 3.1.0 | All Rights Reserved</p>
-        <p class="copyright-disclaimer">
-            <strong>Disclaimer:</strong> <span data-i18n="copyright.disclaimer">This tool is provided "as is" without warranty of any kind. The developer assumes no
-            responsibility for any inaccuracies, errors, omissions, or inconsistencies in the generated documents.
-            Users are solely responsible for verifying and validating all content before use.</span>
-        </p>
     </div>
 
 </div><!-- /.container -->

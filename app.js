@@ -30,7 +30,10 @@ import {
     // Wall View (v3.1)
     showWallView, exitWallView, wallViewZoom, resetWallZoom,
     printWallView, toggleWallFullscreen,
-    showTableView, showCardView
+    showTableView, showCardView,
+    // Project serialisation helpers (chart info + additional info)
+    getChartInfoData, applyChartInfoData,
+    getAdditionalInfoData, applyAdditionalInfoData,
 } from './events.js';
 import {
     createProject, deleteProject, renameProject,
@@ -145,9 +148,14 @@ function _relDate(isoString) {
 
 /** Save current project data before switching away */
 function _saveCurrentProject() {
-    // extractProjectState() includes AppState.snapshots — no separate key needed.
+    // extractProjectState() captures AppState (duties/tasks/snapshots).
+    // chartInfo and additionalInfo live in the DOM — we read them here
+    // and store them alongside state in the ProjectRecord so they are
+    // included in file exports and survive project switching.
     updateActiveProjectData({
-        state: extractProjectState()
+        state:          extractProjectState(),
+        chartInfo:      getChartInfoData(),
+        additionalInfo: getAdditionalInfoData(),
     });
 }
 
@@ -167,27 +175,29 @@ function _loadProjectIntoUI(proj) {
         AppState.duties.push({ id: dutyId, title: '', tasks: [{ id: 'task_' + dutyId + '_1', text: '' }] });
     }
 
-    // 3. Restore per-project snapshots are now handled inside applyProjectState
-    //    via AppState.snapshots — no separate wiring needed here.
-    //    For backward-compat with project records that stored snapshots at the
-    //    top level (old format), merge them in if AppState.snapshots is empty.
+    // 3. Restore per-project snapshots
     if (AppState.snapshots.length === 0 && Array.isArray(proj.snapshots) && proj.snapshots.length > 0) {
         AppState.snapshots = JSON.parse(JSON.stringify(proj.snapshots));
     }
 
-    // 4. Clear undo/redo — command closures cannot be serialised
+    // 4. Restore Chart Info + Additional Info DOM fields
+    //    (stored at proj.chartInfo / proj.additionalInfo since this fix)
+    //    Backward-compatible: old records without these keys → DOM stays blank
+    applyChartInfoData(proj.chartInfo || null);
+    applyAdditionalInfoData(proj.additionalInfo || null);
+
+    // 5. Clear undo/redo — command closures cannot be serialised
     StateManager.undoStack = [];
     StateManager.redoStack = [];
 
-    // 5. Reset tab state → Chart Info, table view
-    //    Use the tracked helpers so every code path stays consistent.
+    // 6. Reset tab state → Chart Info, table view
     setActiveTabId('info-tab');
     restoreActiveTab();
 
-    // 5b. Apply the user's stored view preference (no render yet — step 6 does it).
+    // 6b. Apply the user's stored view preference (no render yet — step 7 does it).
     _applyViewMode(_getPreferredView());
 
-    // 6. Re-render everything
+    // 7. Re-render everything
     updateHistoryButtons();
     Renderer.renderAll(StateManager.state);
     refreshSnapshotList();
