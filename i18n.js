@@ -82,6 +82,21 @@ export function applyTranslations() {
     document.querySelectorAll('[data-i18n-aria]').forEach(el => {
         el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria')));
     });
+
+    // 5. Smart section headings  (data-i18n-section)
+    // These are contenteditable h3 elements — only translate if the user
+    // has NOT renamed them (i.e. the current text still matches a known
+    // default in either EN or AR).  If the user renamed the heading, we
+    // leave it untouched.
+    document.querySelectorAll('[data-i18n-section]').forEach(el => {
+        const key   = el.getAttribute('data-i18n-section');
+        const enVal = translations['en']?.[key] ?? '';
+        const arVal = translations['ar']?.[key] ?? '';
+        const cur   = el.textContent.trim();
+        if (cur === enVal || cur === arVal) {
+            el.textContent = t(key);
+        }
+    });
 }
 
 // ══════════════════════════════════════════════════════════════

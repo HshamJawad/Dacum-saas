@@ -641,7 +641,7 @@
             <button id="btnExportPDF"
                     class="tb-btn tb-btn--neutral"
                     type="button"
-                    onclick="exportToPDF()"
+                    onclick="exportToPDF().catch(e=>console.error(e))"
                     title="Export the DACUM chart as a PDF document">
                 <span class="tb-icon">📄</span><span class="tb-label" data-i18n="toolbar.pdf"> PDF</span><span class="tb-mlabel" data-i18n="toolbar.pdf">PDF</span>
             </button>
@@ -852,7 +852,7 @@
         <!-- Knowledge -->
         <div class="section-container">
             <div class="section-header-editable">
-                <h3 id="knowledgeHeading" contenteditable="false">Knowledge Requirements</h3>
+                <h3 id="knowledgeHeading" contenteditable="false" data-i18n-section="section.knowledge">Knowledge Requirements</h3>
                 <div class="section-header-actions">
                     <button class="btn-rename" onclick="toggleEditHeading('knowledgeHeading')" data-i18n="additionalInfo.rename">✏️ Rename</button>
                     <button class="btn-clear-section" onclick="clearSection('knowledgeInput','knowledgeHeading','Knowledge Requirements')" data-i18n="additionalInfo.clear">🗑️ Clear</button>
@@ -866,7 +866,7 @@
         <!-- Skills -->
         <div class="section-container">
             <div class="section-header-editable">
-                <h3 id="skillsHeading" contenteditable="false">Skills Requirements</h3>
+                <h3 id="skillsHeading" contenteditable="false" data-i18n-section="section.skills">Skills Requirements</h3>
                 <div class="section-header-actions">
                     <button class="btn-rename" onclick="toggleEditHeading('skillsHeading')" data-i18n="additionalInfo.rename">✏️ Rename</button>
                     <button class="btn-clear-section" onclick="clearSection('skillsInput','skillsHeading','Skills Requirements')" data-i18n="additionalInfo.clear">🗑️ Clear</button>
@@ -880,7 +880,7 @@
         <!-- Behaviors -->
         <div class="section-container">
             <div class="section-header-editable">
-                <h3 id="behaviorsHeading" contenteditable="false">Worker Behaviors/Traits</h3>
+                <h3 id="behaviorsHeading" contenteditable="false" data-i18n-section="section.behaviors">Worker Behaviors/Traits</h3>
                 <div class="section-header-actions">
                     <button class="btn-rename" onclick="toggleEditHeading('behaviorsHeading')" data-i18n="additionalInfo.rename">✏️ Rename</button>
                     <button class="btn-clear-section" onclick="clearSection('behaviorsInput','behaviorsHeading','Worker Behaviors/Traits')" data-i18n="additionalInfo.clear">🗑️ Clear</button>
@@ -894,7 +894,7 @@
         <!-- Tools -->
         <div class="section-container">
             <div class="section-header-editable">
-                <h3 id="toolsHeading" contenteditable="false">Tools, Equipment, Supplies and Materials</h3>
+                <h3 id="toolsHeading" contenteditable="false" data-i18n-section="section.tools">Tools, Equipment, Supplies and Materials</h3>
                 <div class="section-header-actions">
                     <button class="btn-rename" onclick="toggleEditHeading('toolsHeading')" data-i18n="additionalInfo.rename">✏️ Rename</button>
                     <button class="btn-clear-section" onclick="clearSection('toolsInput','toolsHeading','Tools, Equipment, Supplies and Materials')" data-i18n="additionalInfo.clear">🗑️ Clear</button>
@@ -908,7 +908,7 @@
         <!-- Trends -->
         <div class="section-container">
             <div class="section-header-editable">
-                <h3 id="trendsHeading" contenteditable="false">Future Trends and Concerns</h3>
+                <h3 id="trendsHeading" contenteditable="false" data-i18n-section="section.trends">Future Trends and Concerns</h3>
                 <div class="section-header-actions">
                     <button class="btn-rename" onclick="toggleEditHeading('trendsHeading')" data-i18n="additionalInfo.rename">✏️ Rename</button>
                     <button class="btn-clear-section" onclick="clearSection('trendsInput','trendsHeading','Future Trends and Concerns')" data-i18n="additionalInfo.clear">🗑️ Clear</button>
@@ -922,7 +922,7 @@
         <!-- Acronyms -->
         <div class="section-container">
             <div class="section-header-editable">
-                <h3 id="acronymsHeading" contenteditable="false">Acronyms</h3>
+                <h3 id="acronymsHeading" contenteditable="false" data-i18n-section="section.acronyms">Acronyms</h3>
                 <div class="section-header-actions">
                     <button class="btn-rename" onclick="toggleEditHeading('acronymsHeading')" data-i18n="additionalInfo.rename">✏️ Rename</button>
                     <button class="btn-clear-section" onclick="clearSection('acronymsInput','acronymsHeading','Acronyms')" data-i18n="additionalInfo.clear">🗑️ Clear</button>
@@ -936,7 +936,7 @@
         <!-- Career Path -->
         <div class="section-container">
             <div class="section-header-editable">
-                <h3 id="careerPathHeading" contenteditable="false">Career Path</h3>
+                <h3 id="careerPathHeading" contenteditable="false" data-i18n-section="section.careerPath">Career Path</h3>
                 <div class="section-header-actions">
                     <button class="btn-rename" onclick="toggleEditHeading('careerPathHeading')" data-i18n="additionalInfo.rename">✏️ Rename</button>
                     <button class="btn-clear-section" onclick="clearSection('careerPathInput','careerPathHeading','Career Path')" data-i18n="additionalInfo.clear">🗑️ Clear</button>

@@ -650,6 +650,8 @@ export const Renderer = {
             dutyDragHandle.title = t('renderer.dragDuty');
 
             const dutyIndexLabel = createHeader({ type: 'duty', index: letter });
+            // Override the text set by design-system.js to use the active language
+            dutyIndexLabel.textContent = t('renderer.wallDutyBadge', { letter });
 
             const deleteDutyBtn = createDeleteCircle({
                 type: 'duty', title: t('renderer.removeDutyTitle'),
