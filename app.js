@@ -545,9 +545,12 @@ window.addEventListener('DOMContentLoaded', () => {
         exportToWord, exportToPDF,
 
         // ── File Engine: Project Export / Import ─────────────────
-        // exportProjectFile receives the active project id so the
-        // user never has to pick which project to export.
-        exportProjectFile: () => exportProjectFile(getActiveProject()?.id),
+        // Save current DOM state FIRST so chartInfo + additionalInfo
+        // are flushed into the ProjectRecord before fileEngine reads it.
+        exportProjectFile: () => {
+            _saveCurrentProject();
+            exportProjectFile(getActiveProject()?.id);
+        },
         importProjectFile,
 
         // ── Project Manager ──────────────────────────────────────

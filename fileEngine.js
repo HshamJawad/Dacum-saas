@@ -191,6 +191,11 @@ export function importProject(file) {
             project.state.taskCounts    = project.state.taskCounts    || {};
             project.state.dutyCount     = project.state.dutyCount     || 0;
             project.state.isCardView    = false;
+            // chartInfo and additionalInfo are optional (absent in files
+            // exported before v3.1 i18n update). Preserve if present,
+            // default to null so _loadProjectIntoUI skips gracefully.
+            project.chartInfo      = project.chartInfo      || null;
+            project.additionalInfo = project.additionalInfo || null;
 
             // ── Step 5: Insert into project store ─────────────
             _cb.injectProject(project);
