@@ -119,6 +119,7 @@ export const translations = {
         'additionalInfo.rename':  '✏️ Rename',
         'additionalInfo.clear':   '🗑️ Clear',
         'additionalInfo.addSection': '➕ Add Section',
+        'section.removeBtn':         '❌ Remove',
 
         // Default section headings
         // IMPORTANT: These values must match the defaults used in clearAll()
@@ -457,6 +458,7 @@ export const translations = {
         'additionalInfo.rename':     '✏️ إعادة تسمية',
         'additionalInfo.clear':      '🗑️ مسح',
         'additionalInfo.addSection': '➕ إضافة قسم',
+        'section.removeBtn':         '❌ حذف',
 
         // Default section headings
         'section.knowledge': 'متطلبات المعرفة',

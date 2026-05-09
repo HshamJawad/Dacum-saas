@@ -1,7 +1,8 @@
 // ============================================================
 // events.js — Feature Functions & Event Binding Layer
 // ============================================================
-import { AppState, StateManager } from './state.js';
+import { t }                                    from './i18n.js';
+import { AppState, StateManager }               from './state.js';
 import {
     pushCommand, undo, redo,
     makeAddDutyCmd, makeDeleteDutyCmd,
@@ -100,7 +101,7 @@ export function removeTask(taskId) {
 }
 
 export function clearDuty(dutyId) {
-    if (confirm('Are you sure you want to clear this duty and all its tasks?')) {
+    if (confirm(t('confirm.clearDuty'))) {
         const duty = AppState.duties.find(d => d.id === dutyId);
         if (duty) {
             duty.title = '';
@@ -109,7 +110,7 @@ export function clearDuty(dutyId) {
         saveToLocalStorage();
         updateHistoryButtons();
         Renderer.renderAll(StateManager.state);
-        showStatus('Duty cleared! ✓', 'success');
+        showStatus(t('status.dutyCleared'), 'success');
     }
 }
 
@@ -142,7 +143,7 @@ export function exitWallView() {
     document.body.style.overflow = '';
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     const fsBtn = document.getElementById('wvFullscreenBtn');
-    if (fsBtn) fsBtn.textContent = '⛶ Fullscreen';
+    if (fsBtn) fsBtn.textContent = t('wall.fullscreen');
 }
 
 export function wallViewZoom(delta) {
@@ -176,11 +177,11 @@ export function toggleWallFullscreen() {
     if (!container) return;
     if (!document.fullscreenElement) {
         container.requestFullscreen()
-            .then(() => { if (btn) btn.textContent = '⛶ Exit Fullscreen'; })
+            .then(() => { if (btn) btn.textContent = t('wall.exitFullscreen'); })
             .catch(err => console.warn('[WallView] Fullscreen error:', err));
     } else {
         document.exitFullscreen()
-            .then(() => { if (btn) btn.textContent = '⛶ Fullscreen'; });
+            .then(() => { if (btn) btn.textContent = t('wall.fullscreen'); });
     }
 }
 
@@ -221,7 +222,7 @@ export function _applyCardViewDOM(isCardView) {
 // ══════════════════════════════════════════════════════════════
 
 export function clearAll() {
-    if (!confirm('Are you sure you want to clear ALL data? This cannot be undone!')) return;
+    if (!confirm(t('confirm.clearAll'))) return;
 
     // Clear Chart Info fields
     ['dacumDate', 'producedFor', 'producedBy', 'occupationTitle', 'jobTitle']
@@ -245,15 +246,15 @@ export function clearAll() {
         _applyCardViewDOM(false);
     }
 
-    // Reset Additional Info headings
+    // Reset Additional Info headings to current-language defaults
     const headingDefaults = {
-        knowledgeHeading: 'Knowledge Requirements',
-        skillsHeading:    'Skills Requirements',
-        behaviorsHeading: 'Worker Behaviors/Traits',
-        toolsHeading:     'Tools, Equipment, Supplies and Materials',
-        trendsHeading:    'Future Trends and Concerns',
-        acronymsHeading:  'Acronyms',
-        careerPathHeading:'Career Path'
+        knowledgeHeading:  t('section.knowledge'),
+        skillsHeading:     t('section.skills'),
+        behaviorsHeading:  t('section.behaviors'),
+        toolsHeading:      t('section.tools'),
+        trendsHeading:     t('section.trends'),
+        acronymsHeading:   t('section.acronyms'),
+        careerPathHeading: t('section.careerPath'),
     };
     Object.entries(headingDefaults).forEach(([id, text]) => {
         const el = document.getElementById(id);
@@ -282,7 +283,7 @@ export function clearAll() {
     saveToLocalStorage();
     updateHistoryButtons();
     Renderer.renderAll(StateManager.state);
-    showStatus('All data cleared! ✓', 'success');
+    showStatus(t('status.allCleared'), 'success');
 }
 
 function _clearImagePreview(type) {
@@ -290,7 +291,7 @@ function _clearImagePreview(type) {
     const preview = document.getElementById(type + 'ImagePreview');
     const removeBtn = document.getElementById('remove' + cap + 'Image');
     const fileInput = document.getElementById(type + 'ImageInput');
-    if (preview)   { preview.innerHTML = '<span class="image-preview-placeholder">No image</span>'; preview.classList.remove('has-image'); }
+    if (preview)   { preview.innerHTML = '<span class="image-preview-placeholder">' + t('chartInfo.noImage') + '</span>'; preview.classList.remove('has-image'); }
     if (removeBtn) removeBtn.style.display = 'none';
     if (fileInput) fileInput.value = '';
 }
@@ -304,7 +305,7 @@ export function handleImageUpload(event, imageType) {
     if (!file) return;
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/bmp'];
     if (!validTypes.includes(file.type)) {
-        showStatus('Please upload a valid image file (JPG, JPEG, PNG, or BMP)', 'error');
+        showStatus(t('status.imageBadType'), 'error');
         return;
     }
     const reader = new FileReader();
@@ -317,17 +318,17 @@ export function handleImageUpload(event, imageType) {
         if (preview) { preview.innerHTML = `<img src="${imageData}" alt="${imageType} logo">`; preview.classList.add('has-image'); }
         const removeBtn = document.getElementById('remove' + cap + 'Image');
         if (removeBtn) removeBtn.style.display = 'inline-block';
-        showStatus('Image uploaded successfully! ✓', 'success');
+        showStatus(t('status.imageUploaded'), 'success');
     };
     reader.readAsDataURL(file);
 }
 
 export function removeImage(imageType) {
-    if (!confirm('Are you sure you want to remove this logo?')) return;
+    if (!confirm(t('confirm.removeImage'))) return;
     if (imageType === 'producedFor') producedForImage = null;
     else if (imageType === 'producedBy') producedByImage = null;
     _clearImagePreview(imageType);
-    showStatus('Image removed! ✓', 'success');
+    showStatus(t('status.imageRemoved'), 'success');
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -339,10 +340,10 @@ export function toggleInfoBox() {
     const btn     = document.querySelector('.btn-toggle-info');
     if (content.style.display === 'none') {
         content.style.display = 'block';
-        btn.textContent = 'Hide';
+        btn.textContent = t('infobox.hide');
     } else {
         content.style.display = 'none';
-        btn.textContent = 'Show';
+        btn.textContent = t('infobox.show');
     }
 }
 
@@ -356,7 +357,7 @@ export function toggleEditHeading(headingId) {
     if (isEditable) {
         heading.setAttribute('contenteditable', 'false');
         heading.style.cursor = '';
-        showStatus('Heading updated! ✓', 'success');
+        showStatus(t('status.headingUpdated'), 'success');
     } else {
         heading.setAttribute('contenteditable', 'true');
         heading.focus();
@@ -369,12 +370,29 @@ export function toggleEditHeading(headingId) {
 }
 
 export function clearSection(inputId, headingId, defaultHeading) {
-    if (!confirm('Are you sure you want to clear this section?')) return;
-    const input = document.getElementById(inputId);
+    if (!confirm(t('confirm.clearSection'))) return;
+    const input   = document.getElementById(inputId);
     const heading = document.getElementById(headingId);
+
+    // Map known headingIds to their translation keys so the reset
+    // text always matches the active language, regardless of which
+    // language was set when the Clear button was last rendered.
+    const headingKeyMap = {
+        knowledgeHeading:  'section.knowledge',
+        skillsHeading:     'section.skills',
+        behaviorsHeading:  'section.behaviors',
+        toolsHeading:      'section.tools',
+        trendsHeading:     'section.trends',
+        acronymsHeading:   'section.acronyms',
+        careerPathHeading: 'section.careerPath',
+    };
+    const resetText = headingKeyMap[headingId]
+        ? t(headingKeyMap[headingId])
+        : defaultHeading;   // custom sections fall back to passed-in default
+
     if (input)   input.value = '';
-    if (heading) { heading.textContent = defaultHeading; heading.setAttribute('contenteditable', 'false'); }
-    showStatus('Section cleared! ✓', 'success');
+    if (heading) { heading.textContent = resetText; heading.setAttribute('contenteditable', 'false'); }
+    showStatus(t('status.sectionCleared'), 'success');
 }
 
 export function addCustomSection() {
@@ -387,25 +405,29 @@ export function addCustomSection() {
     const sectionDiv = document.createElement('div');
     sectionDiv.className = 'section-container';
     sectionDiv.id = sectionId;
+
+    // Capture translated strings at creation time (used in onclick defaults)
+    const sectionTitle = t('section.custom', { n: customSectionCounter });
+
     sectionDiv.innerHTML = `
         <div class="section-header-editable">
-            <h3 id="${headingId}" contenteditable="false">Custom Section ${customSectionCounter}</h3>
+            <h3 id="${headingId}" contenteditable="false">${sectionTitle}</h3>
             <div class="section-header-actions">
-                <button class="btn-rename" onclick="window.toggleEditHeading('${headingId}')">✏️ Rename</button>
-                <button class="btn-clear-section" onclick="window.clearSection('${inputId}', '${headingId}', 'Custom Section ${customSectionCounter}')">🗑️ Clear</button>
-                <button class="btn-remove-section" onclick="window.removeCustomSection('${sectionId}')">❌ Remove</button>
+                <button class="btn-rename" onclick="window.toggleEditHeading('${headingId}')">${t('additionalInfo.rename')}</button>
+                <button class="btn-clear-section" onclick="window.clearSection('${inputId}', '${headingId}', '${sectionTitle}')">${t('additionalInfo.clear')}</button>
+                <button class="btn-remove-section" onclick="window.removeCustomSection('${sectionId}')">${t('section.removeBtn')}</button>
             </div>
         </div>
-        <textarea id="${inputId}" placeholder="Enter information for this custom section on separate lines"></textarea>
+        <textarea id="${inputId}" placeholder="${t('section.custom.ph')}"></textarea>
     `;
     container.appendChild(sectionDiv);
-    showStatus('Custom section added! ✓', 'success');
+    showStatus(t('status.customSectionAdded'), 'success');
 }
 
 export function removeCustomSection(sectionId) {
-    if (!confirm('Are you sure you want to remove this section? This cannot be undone!')) return;
+    if (!confirm(t('confirm.removeSection'))) return;
     const section = document.getElementById(sectionId);
-    if (section) { section.remove(); showStatus('Section removed! ✓', 'success'); }
+    if (section) { section.remove(); showStatus(t('status.sectionRemoved'), 'success'); }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -466,10 +488,10 @@ export function saveToJSON() {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        showStatus('Data saved successfully! ✓', 'success');
+        showStatus(t('status.dataSaved'), 'success');
     } catch (err) {
         console.error('Error saving data:', err);
-        showStatus('Error saving data: ' + err.message, 'error');
+        showStatus(t('status.dataSaveError', { msg: err.message }), 'error');
     }
 }
 
@@ -578,17 +600,17 @@ export function loadFromJSON(event) {
                 saveToLocalStorage();
                 updateHistoryButtons();
                 Renderer.renderAll(StateManager.state);
-                showStatus('Data loaded successfully! ✓', 'success');
+                showStatus(t('status.dataLoaded'), 'success');
                 event.target.value = '';
             } catch (parseErr) {
                 console.error('Error parsing JSON:', parseErr);
-                showStatus('Error: Invalid JSON file', 'error');
+                showStatus(t('status.jsonParseError'), 'error');
             }
         };
         reader.readAsText(file);
     } catch (err) {
         console.error('Error loading file:', err);
-        showStatus('Error loading file: ' + err.message, 'error');
+        showStatus(t('status.fileLoadError', { msg: err.message }), 'error');
     }
 }
 
@@ -599,7 +621,7 @@ export function loadFromJSON(event) {
 export async function exportToWord() {
     try {
         if (typeof window.docx === 'undefined') {
-            showStatus('Error: Word export library not loaded. Please refresh the page.', 'error');
+            showStatus(t('status.wordLibMissing'), 'error');
             return;
         }
 
@@ -619,19 +641,19 @@ export async function exportToWord() {
         const jobTitle        = document.getElementById('jobTitle').value;
 
         if (!occupationTitle || !jobTitle) {
-            showStatus('Please fill in at least the Occupation Title and Job Title', 'error');
+            showStatus(t('status.pdfMissingFields'), 'error');
             return;
         }
-        showStatus('Generating Word document...', 'success');
+        showStatus(t('status.wordGenerating'), 'success');
         const children = [];
 
         // Title page
-        children.push(new Paragraph({ children: [new TextRun({ text: `Occupation Title: ${occupationTitle}`, bold: true, size: 28 })], spacing: { after: 200 }, bidirectional: false }));
-        children.push(new Paragraph({ children: [new TextRun({ text: `Job Title: ${jobTitle}`, bold: true, size: 28 })], spacing: { after: 200 }, bidirectional: false }));
-        if (dacumDate) children.push(new Paragraph({ children: [new TextRun({ text: `DACUM Date: ${dacumDate}`, bold: true, size: 24 })], spacing: { after: 200 }, bidirectional: false }));
+        children.push(new Paragraph({ children: [new TextRun({ text: t('word.occupationTitle', { title: occupationTitle }), bold: true, size: 28 })], spacing: { after: 200 }, bidirectional: false }));
+        children.push(new Paragraph({ children: [new TextRun({ text: t('word.jobTitle', { title: jobTitle }), bold: true, size: 28 })], spacing: { after: 200 }, bidirectional: false }));
+        if (dacumDate) children.push(new Paragraph({ children: [new TextRun({ text: t('word.dacumDate', { date: dacumDate }), bold: true, size: 24 })], spacing: { after: 200 }, bidirectional: false }));
 
         if (producedFor) {
-            children.push(new Paragraph({ children: [new TextRun({ text: `Produced For: ${producedFor}`, bold: true, size: 24 })], spacing: { after: 200 }, bidirectional: false }));
+            children.push(new Paragraph({ children: [new TextRun({ text: t('word.producedFor', { name: producedFor }), bold: true, size: 24 })], spacing: { after: 200 }, bidirectional: false }));
             if (producedForImage) {
                 try {
                     const base64Data = producedForImage.split(',')[1];
@@ -641,7 +663,7 @@ export async function exportToWord() {
         }
 
         if (producedBy) {
-            children.push(new Paragraph({ children: [new TextRun({ text: `Produced By: ${producedBy}`, bold: true, size: 24 })], spacing: { after: 200 }, bidirectional: false }));
+            children.push(new Paragraph({ children: [new TextRun({ text: t('word.producedBy', { name: producedBy }), bold: true, size: 24 })], spacing: { after: 200 }, bidirectional: false }));
             if (producedByImage) {
                 try {
                     const base64Data = producedByImage.split(',')[1];
@@ -653,7 +675,7 @@ export async function exportToWord() {
         }
 
         // Duties and tasks — read from central AppState (works in any view)
-        children.push(new Paragraph({ children: [new PageBreak(), new TextRun({ text: 'Duties and Tasks', bold: true, size: 28 })], alignment: AlignmentType.CENTER, spacing: { after: 300 }, bidirectional: false }));
+        children.push(new Paragraph({ children: [new PageBreak(), new TextRun({ text: t('word.dutiesAndTasks'), bold: true, size: 28 })], alignment: AlignmentType.CENTER, spacing: { after: 300 }, bidirectional: false }));
 
         const duties = AppState.duties.map(d => ({
             duty:  d.title,
@@ -662,7 +684,7 @@ export async function exportToWord() {
 
         duties.forEach((dutyData, dutyIndex) => {
             const letter = String.fromCharCode(65 + dutyIndex);
-            const dutyLabel = `DUTY ${letter}: ${dutyData.duty}`;
+            const dutyLabel = t('word.dutyLabel', { letter, title: dutyData.duty });
             const tasksPerRow = 4;
             const numTaskRows = Math.ceil(dutyData.tasks.length / tasksPerRow);
             const tableRows = [];
@@ -674,7 +696,7 @@ export async function exportToWord() {
                 for (let col = 0; col < tasksPerRow; col++) {
                     const ti = row * tasksPerRow + col;
                     if (ti < dutyData.tasks.length) {
-                        const tLabel = `Task ${letter}${ti + 1}: ${dutyData.tasks[ti]}`;
+                        const tLabel = t('word.taskLabel', { letter, n: ti + 1, text: dutyData.tasks[ti] });
                         rowCells.push(new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: tLabel, size: 24 })], bidirectional: false })], width: { size: 25, type: WidthType.PERCENTAGE } }));
                     } else {
                         rowCells.push(new TableCell({ children: [new Paragraph('')], width: { size: 25, type: WidthType.PERCENTAGE } }));
@@ -687,7 +709,7 @@ export async function exportToWord() {
         });
 
         // Additional info
-        children.push(new Paragraph({ children: [new PageBreak(), new TextRun({ text: 'Additional Information', bold: true, size: 24 })], spacing: { after: 300 }, bidirectional: false }));
+        children.push(new Paragraph({ children: [new PageBreak(), new TextRun({ text: t('word.additionalInfo'), bold: true, size: 24 })], spacing: { after: 300 }, bidirectional: false }));
 
         const additionalInfoSections = [
             { heading1: document.getElementById('knowledgeHeading').textContent, content1: document.getElementById('knowledgeInput').value.trim(), heading2: document.getElementById('behaviorsHeading').textContent, content2: document.getElementById('behaviorsInput').value.trim() },
@@ -737,10 +759,10 @@ export async function exportToWord() {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        showStatus('Word document exported successfully! ✓', 'success');
+        showStatus(t('status.wordExported'), 'success');
     } catch (err) {
         console.error('Error generating Word document:', err);
-        showStatus('Error generating Word document: ' + err.message, 'error');
+        showStatus(t('status.wordExportError', { msg: err.message }), 'error');
     }
 }
 
@@ -768,7 +790,7 @@ export function exportToPDF() {
             dacumDateFormatted = `${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}-${d.getFullYear()}`;
         }
         if (!occupationTitleInput.value || !jobTitleInput.value) {
-            alert('Please fill in at least the Occupation Title and Job Title');
+            alert(t('status.pdfMissingFields'));
             return;
         }
 
@@ -790,7 +812,7 @@ export function exportToPDF() {
 
         // ── Title page ────────────────────────────────────────────
         pdf.setFontSize(18); pdf.setFont(undefined, 'bold');
-        pdf.text(`DACUM Research Chart for ${occupationTitleInput.value}`, pageWidth / 2, yPos, { align: 'center' });
+        pdf.text(t('pdf.chartTitle', { title: occupationTitleInput.value }), pageWidth / 2, yPos, { align: 'center' });
         yPos += 18;
 
         const leftColX = margin + 10;
@@ -801,14 +823,14 @@ export function exportToPDF() {
         // Left column — Produced For / By / Date
         if (producedForInput.value) {
             pdf.setFontSize(16); pdf.setFont(undefined, 'bold');
-            pdf.text('Produced for', leftColX, leftY); leftY += 8;
+            pdf.text(t('pdf.producedFor'), leftColX, leftY); leftY += 8;
             if (producedForImage) { try { pdf.addImage(producedForImage, 'JPEG', leftColX, leftY, 30, 20); leftY += 24; } catch(e) {} }
             pdf.setFont(undefined, 'normal'); pdf.setFontSize(13);
             pdf.text(producedForInput.value, leftColX, leftY); leftY += 16;
         }
         if (producedByInput.value) {
             pdf.setFontSize(16); pdf.setFont(undefined, 'bold');
-            pdf.text('Produced by', leftColX, leftY); leftY += 8;
+            pdf.text(t('pdf.producedBy'), leftColX, leftY); leftY += 8;
             if (producedByImage) { try { pdf.addImage(producedByImage, 'JPEG', leftColX, leftY, 30, 20); leftY += 24; } catch(e) {} }
             pdf.setFont(undefined, 'normal'); pdf.setFontSize(13);
             pdf.text(producedByInput.value, leftColX, leftY); leftY += 14;
@@ -819,17 +841,15 @@ export function exportToPDF() {
         }
 
         // Right column — Occupation / Job title
-        // Each label sits on its own line; the value wraps to the next
-        // line below, indented slightly, preventing overlap entirely.
         pdf.setFontSize(14); pdf.setFont(undefined, 'bold');
-        pdf.text('Occupation Title:', rightColX, rightY); rightY += 7;
+        pdf.text(t('pdf.occupationTitle'), rightColX, rightY); rightY += 7;
         pdf.setFont(undefined, 'normal'); pdf.setFontSize(13);
         const occupationLines = pdf.splitTextToSize(occupationTitleInput.value, rightColW);
         pdf.text(occupationLines, rightColX + 3, rightY);
-        rightY += occupationLines.length * lineH12 + 8;   // gap before next label
+        rightY += occupationLines.length * lineH12 + 8;
 
         pdf.setFontSize(14); pdf.setFont(undefined, 'bold');
-        pdf.text('Job Title:', rightColX, rightY); rightY += 7;
+        pdf.text(t('pdf.jobTitle'), rightColX, rightY); rightY += 7;
         pdf.setFont(undefined, 'normal'); pdf.setFontSize(13);
         const jobLines = pdf.splitTextToSize(jobTitleInput.value, rightColW);
         pdf.text(jobLines, rightColX + 3, rightY);
@@ -840,12 +860,12 @@ export function exportToPDF() {
             duty:  d.title,
             tasks: d.tasks.map(t => t.text).filter(t => t.trim() !== '')
         }));
-        if (duties.length === 0) { showStatus('Please add at least one duty with tasks', 'error'); return; }
+        if (duties.length === 0) { showStatus(t('status.pdfNoDuties'), 'error'); return; }
 
         pdf.setFillColor(200, 200, 200);
         pdf.rect(margin, yPos, pageWidth-(margin*2), 10, 'FD');
         pdf.setFontSize(14); pdf.setFont(undefined, 'bold');
-        pdf.text('DUTIES AND TASKS', pageWidth/2, yPos + 7, { align: 'center' });
+        pdf.text(t('pdf.dutiesAndTasks'), pageWidth/2, yPos + 7, { align: 'center' });
         yPos += 10;
 
         const maxCols  = 4;
@@ -864,7 +884,7 @@ export function exportToPDF() {
                 pdf.setFontSize(12); pdf.setFont(undefined, 'bold');
                 const letter = String.fromCharCode(65 + dutyIndex + col);
                 const lines  = pdf.splitTextToSize(
-                    `DUTY ${letter}: ${duties[dutyIndex + col].duty}`, innerW
+                    t('pdf.dutyLabel', { letter, title: duties[dutyIndex + col].duty }), innerW
                 );
                 const h = cellPadTop + lines.length * lineH12 + cellPadBot;
                 maxHeaderHeight = Math.max(maxHeaderHeight, h);
@@ -877,7 +897,7 @@ export function exportToPDF() {
                 pdf.rect(x, yPos, colWidth, maxHeaderHeight, 'FD');
                 pdf.setFontSize(12); pdf.setFont(undefined, 'bold');
                 const lines = pdf.splitTextToSize(
-                    `DUTY ${letter}: ${duties[dutyIndex + col].duty}`, innerW
+                    t('pdf.dutyLabel', { letter, title: duties[dutyIndex + col].duty }), innerW
                 );
                 pdf.text(lines, x + cellPadX, yPos + cellPadTop);
             }
@@ -910,7 +930,7 @@ export function exportToPDF() {
                     pdf.setFillColor(200, 200, 200);
                     pdf.rect(margin, yPos, pageWidth-(margin*2), 10, 'FD');
                     pdf.setFontSize(14); pdf.setFont(undefined, 'bold');
-                    pdf.text('DUTIES AND TASKS (continued)', pageWidth/2, yPos + 7, { align: 'center' });
+                    pdf.text(t('pdf.dutiesAndTasksCont'), pageWidth/2, yPos + 7, { align: 'center' });
                     yPos += 10;
                 }
 
@@ -922,7 +942,7 @@ export function exportToPDF() {
                     pdf.rect(x, yPos, colWidth, rowHeight, 'S');
                     if (task) {
                         const letter    = String.fromCharCode(65 + dutyIndex + col);
-                        const labelLine = `Task ${letter}${taskRow + 1}:`;
+                        const labelLine = t('pdf.taskLabel', { letter, n: taskRow + 1 });
                         const taskLines = pdf.splitTextToSize(task, innerW);
                         // Label in bold, then task text in normal below it.
                         pdf.setFont(undefined, 'bold');
@@ -940,7 +960,7 @@ export function exportToPDF() {
                 pdf.setFillColor(200, 200, 200);
                 pdf.rect(margin, yPos, pageWidth-(margin*2), 10, 'FD');
                 pdf.setFontSize(14); pdf.setFont(undefined, 'bold');
-                pdf.text('DUTIES AND TASKS (continued)', pageWidth/2, yPos + 7, { align: 'center' });
+                pdf.text(t('pdf.dutiesAndTasksCont'), pageWidth/2, yPos + 7, { align: 'center' });
                 yPos += 10;
             }
         }
@@ -952,7 +972,7 @@ export function exportToPDF() {
         if (kt || st || bt) {
             pdf.addPage('a4', 'landscape'); yPos = margin + 5;
             pdf.setFontSize(14); pdf.setFont(undefined, 'bold');
-            pdf.text('General Knowledge and Skills', pageWidth/2, yPos, { align: 'center' }); yPos += 10;
+            pdf.text(t('pdf.generalKnowledge'), pageWidth/2, yPos, { align: 'center' }); yPos += 10;
             const tw = (pageWidth - (margin * 2)) / 3;
             let c1Y = yPos, c2Y = yPos, c3Y = yPos;
             const pdfSection = (text, heading, x, yRef) => {
@@ -1029,10 +1049,10 @@ export function exportToPDF() {
         });
 
         pdf.save(`${occupationTitleInput.value}_${jobTitleInput.value}_DACUM_Chart.pdf`);
-        showStatus('PDF exported successfully! ✓', 'success');
+        showStatus(t('status.pdfExported'), 'success');
     } catch (err) {
         console.error('Error generating PDF:', err);
-        showStatus('Error generating PDF: ' + err.message, 'error');
+        showStatus(t('status.pdfExportError', { msg: err.message }), 'error');
     }
 }
 
