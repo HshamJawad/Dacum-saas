@@ -380,7 +380,78 @@
         .hc-getintouch { display:flex;gap:12px;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px;font-size:.88em;color:#92400e;line-height:1.5; }
         .hc-getintouch strong { color:#b45309;display:block;margin-bottom:3px;font-size:1em; }
         .hc-getintouch p { margin:0; }
+
+        /* ══ LANGUAGE TOGGLE BUTTON ═══════════════════════════ */
+        .sb-lang-btn {
+            display:flex;align-items:center;justify-content:center;
+            background:rgba(255,255,255,.07);
+            color:#94a3b8;
+            border:1px solid rgba(255,255,255,.11);
+            border-radius:7px;padding:5px 0;
+            font-size:0.72em;font-weight:700;letter-spacing:.07em;
+            cursor:pointer;width:100%;margin-top:6px;
+            transition:background .15s,color .15s;
+        }
+        .sb-lang-btn:hover { background:rgba(255,255,255,.13);color:#e2e8f0; }
+        body.sb-sidebar-closed .sb-lang-btn { display:none; }
+
+        /* ══ RTL SUPPORT ══════════════════════════════════════ */
+        /* Flip sidebar from left → right */
+        html[dir="rtl"] #sidebar { left:auto;right:0; }
+
+        /* Push content to the left (away from right-side sidebar) */
+        html[dir="rtl"] #appWrapper { margin-left:0;margin-right:260px; }
+        html[dir="rtl"] body.sb-sidebar-closed #appWrapper { margin-right:60px; }
+
+        /* Fixed toolbar must also mirror */
+        html[dir="rtl"] .top-toolbar { left:auto;right:260px; }
+        html[dir="rtl"] body.sb-sidebar-closed .top-toolbar { right:60px; }
+
+        /* Collapse-button chevron: mirror the SVG so it points the right way */
+        html[dir="rtl"] .sb-collapse-btn svg { transform:scaleX(-1); }
+        html[dir="rtl"] body.sb-sidebar-closed .sb-collapse-btn {
+            transform:scaleX(1);
+            margin-left:0;margin-right:auto;
+        }
+
+        /* Section border accent: flip left → right */
+        html[dir="rtl"] .sb-nav-item {
+            border-left:none;
+            border-right:3px solid transparent;
+        }
+        html[dir="rtl"] .sb-nav-item.sb-nav-active,
+        html[dir="rtl"] .sb-nav-item:hover {
+            border-right-color:#6366f1;
+        }
+
+        /* ── Mobile RTL ───────────────────────────────────── */
+        @media (max-width:768px) {
+            html[dir="rtl"] #sidebar {
+                right:0;left:auto;
+                transform:translateX(100%);
+            }
+            html[dir="rtl"] #sidebar.sb-mobile-open {
+                transform:translateX(0) !important;
+            }
+            html[dir="rtl"] #appWrapper { margin-right:0 !important; }
+            html[dir="rtl"] .top-toolbar { right:0 !important;left:0 !important; }
+        }
+
+        /* Arabic text: ensure Tahoma (Arabic-capable) is prioritised */
+        html[dir="rtl"] body,
+        html[dir="rtl"] input,
+        html[dir="rtl"] textarea,
+        html[dir="rtl"] button {
+            font-family:'Segoe UI',Tahoma,'Arial',sans-serif;
+        }
     </style>
+
+    <!-- ── i18n Bootstrap (must load before app.js renders) ─────── -->
+    <script type="module">
+        import { initI18n } from './i18n.js';
+        // Apply stored language + dir before first paint
+        document.addEventListener('DOMContentLoaded', initI18n);
+    </script>
 
     <!-- ── App Bootstrap (ES Module) ────────────────────────── -->
     <script type="module" src="./app.js"></script>
@@ -436,7 +507,7 @@
         <div class="sb-brand-logo">📊</div>
         <div class="sb-brand-text">
             <span class="sb-brand-name">DACUM Lite</span>
-            <span class="sb-brand-tagline">Chart Generator</span>
+            <span class="sb-brand-tagline" data-i18n="sidebar.brandTagline">Chart Generator</span>
         </div>
         <!-- Collapse / Expand button — always visible -->
         <button class="sb-collapse-btn" id="sbCollapseBtn" onclick="pmToggleSidebar()" title="Toggle sidebar" aria-label="Toggle sidebar">
@@ -449,31 +520,31 @@
     </div>
 
     <!-- Navigation Section -->
-    <div class="sb-section-label">NAVIGATION</div>
+    <div class="sb-section-label" data-i18n="sidebar.navLabel">NAVIGATION</div>
     <nav class="sb-nav" id="sbNav">
         <div class="sb-nav-item sb-nav-active" data-tab="info-tab">
             <span class="sb-nav-icon">📋</span>
-            <span class="sb-nav-label">Chart Info</span>
+            <span class="sb-nav-label" data-i18n="sidebar.nav.chartInfo">Chart Info</span>
         </div>
         <div class="sb-nav-item" data-tab="duties-tab">
             <span class="sb-nav-icon">✅</span>
-            <span class="sb-nav-label">Duties &amp; Tasks</span>
+            <span class="sb-nav-label" data-i18n="sidebar.nav.dutiesTasks">Duties &amp; Tasks</span>
         </div>
         <div class="sb-nav-item" data-tab="additional-info-tab">
             <span class="sb-nav-icon">📚</span>
-            <span class="sb-nav-label">Additional Info</span>
+            <span class="sb-nav-label" data-i18n="sidebar.nav.additionalInfo">Additional Info</span>
         </div>
         <div class="sb-nav-item" data-tab="help-tab">
             <span class="sb-nav-icon">❓</span>
-            <span class="sb-nav-label">Help</span>
+            <span class="sb-nav-label" data-i18n="sidebar.nav.help">Help</span>
         </div>
     </nav>
 
     <!-- Projects Section -->
     <div class="sb-section-label sb-section-label--projects">
-        <span>📁 PROJECTS</span>
+        <span data-i18n="sidebar.projectsLabel">📁 PROJECTS</span>
         <button class="sb-new-btn" type="button" onclick="pmNewProject()" title="Create new project">
-            + New
+            <span data-i18n="sidebar.newBtn">+ New</span>
         </button>
     </div>
 
@@ -482,6 +553,7 @@
         <input type="text"
                id="projectSearchInput"
                placeholder="🔍  Search projects…"
+               data-i18n-placeholder="sidebar.searchPlaceholder"
                oninput="pmFilterProjects(this.value)"
                autocomplete="off">
     </div>
@@ -494,9 +566,10 @@
     <!-- Footer -->
     <div class="sb-footer">
         <span id="sbProjectCount">0 projects</span>
+        <button id="langToggleBtn" class="sb-lang-btn" type="button">AR</button>
         <button id="pwaInstallBtn" class="sb-install-btn" onclick="pwaInstall()" title="Install DACUM Lite as an app" style="display:none;">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Install App
+            <span data-i18n="sidebar.installApp">Install App</span>
         </button>
     </div>
 
@@ -539,7 +612,7 @@
                     type="button"
                     onclick="promptSnapshot()"
                     title="Save a named snapshot of the current state">
-                <span class="tb-icon">📸</span><span class="tb-label"> Snapshot</span><span class="tb-mlabel">Snapshot</span>
+                <span class="tb-icon">📸</span><span class="tb-label" data-i18n="toolbar.snapshot"> Snapshot</span><span class="tb-mlabel" data-i18n="toolbar.snapshot">Snapshot</span>
             </button>
         </div>
 
@@ -551,14 +624,14 @@
                     type="button"
                     onclick="exportProjectFile()"
                     title="Export the active project as a versioned JSON file">
-                <span class="tb-icon">📤</span><span class="tb-label"> Export Project</span><span class="tb-mlabel">Export</span>
+                <span class="tb-icon">📤</span><span class="tb-label" data-i18n="toolbar.exportProject"> Export Project</span><span class="tb-mlabel" data-i18n="toolbar.export">Export</span>
             </button>
             <button id="btnImportProject"
                     class="tb-btn tb-btn--neutral"
                     type="button"
                     onclick="document.getElementById('importProjectInput').click()"
                     title="Import a previously exported project JSON file">
-                <span class="tb-icon">📥</span><span class="tb-label"> Import Project</span><span class="tb-mlabel">Import</span>
+                <span class="tb-icon">📥</span><span class="tb-label" data-i18n="toolbar.importProject"> Import Project</span><span class="tb-mlabel" data-i18n="toolbar.import">Import</span>
             </button>
         </div>
 
@@ -570,14 +643,14 @@
                     type="button"
                     onclick="exportToPDF()"
                     title="Export the DACUM chart as a PDF document">
-                <span class="tb-icon">📄</span><span class="tb-label"> PDF</span><span class="tb-mlabel">PDF</span>
+                <span class="tb-icon">📄</span><span class="tb-label" data-i18n="toolbar.pdf"> PDF</span><span class="tb-mlabel" data-i18n="toolbar.pdf">PDF</span>
             </button>
             <button id="btnExportWord"
                     class="tb-btn tb-btn--neutral"
                     type="button"
                     onclick="exportToWord()"
                     title="Export the DACUM chart as a Word (DOCX) document">
-                <span class="tb-icon">📝</span><span class="tb-label"> Word</span><span class="tb-mlabel">Word</span>
+                <span class="tb-icon">📝</span><span class="tb-label" data-i18n="toolbar.word"> Word</span><span class="tb-mlabel" data-i18n="toolbar.word">Word</span>
             </button>
         </div>
 
@@ -589,7 +662,7 @@
                     type="button"
                     onclick="clearAll()"
                     title="Clear all data from the current chart">
-                <span class="tb-icon">🗑️</span><span class="tb-label"> Clear All</span><span class="tb-mlabel">Clear</span>
+                <span class="tb-icon">🗑️</span><span class="tb-label" data-i18n="toolbar.clearAll"> Clear All</span><span class="tb-mlabel" data-i18n="toolbar.clear">Clear</span>
             </button>
         </div>
 
@@ -606,7 +679,7 @@
                     onclick="undo()"
                     disabled
                     title="Undo (Ctrl+Z)">
-                <span class="tb-icon">↩</span><span class="tb-label"> Undo</span><span class="tb-mlabel">Undo</span>
+                <span class="tb-icon">↩</span><span class="tb-label" data-i18n="toolbar.undo"> Undo</span><span class="tb-mlabel" data-i18n="toolbar.undo">Undo</span>
             </button>
             <button id="floatRedoBtn"
                     class="tb-btn tb-btn--ghost"
@@ -614,7 +687,7 @@
                     onclick="redo()"
                     disabled
                     title="Redo (Ctrl+Y)">
-                <span class="tb-icon">↪</span><span class="tb-label"> Redo</span><span class="tb-mlabel">Redo</span>
+                <span class="tb-icon">↪</span><span class="tb-label" data-i18n="toolbar.redo"> Redo</span><span class="tb-mlabel" data-i18n="toolbar.redo">Redo</span>
             </button>
             <button id="debugBtn"
                     class="tb-btn tb-btn--ghost"
@@ -631,27 +704,29 @@
          TAB 1 — CHART INFO
          ══════════════════════════════════════════════════════ -->
     <div class="tab-content active" id="info-tab">
-        <h2>DACUM Research Chart Information</h2>
+        <h2 data-i18n="chartInfo.heading">DACUM Research Chart Information</h2>
 
         <div class="mb-20">
             <div class="mb-10">
-                <label for="dacumDate">📅 DACUM Date:</label>
+                <label for="dacumDate" data-i18n="chartInfo.dacumDate">📅 DACUM Date:</label>
                 <input type="date" id="dacumDate">
             </div>
 
             <div class="mb-10">
-                <label for="producedFor">🏢 Produced For:</label>
-                <input type="text" id="producedFor" placeholder="e.g., Company/Organization Name">
+                <label for="producedFor" data-i18n="chartInfo.producedFor">🏢 Produced For:</label>
+                <input type="text" id="producedFor"
+                       placeholder="e.g., Company/Organization Name"
+                       data-i18n-placeholder="chartInfo.producedFor.ph">
                 <div class="image-upload-container">
                     <div class="image-preview" id="producedForImagePreview">
-                        <span class="image-preview-placeholder">No image</span>
+                        <span class="image-preview-placeholder" data-i18n="chartInfo.noImage">No image</span>
                     </div>
                     <div>
                         <button class="btn-add-image" onclick="document.getElementById('producedForImageInput').click()">
-                            🖼️ Add Logo
+                            <span data-i18n="chartInfo.addLogo">🖼️ Add Logo</span>
                         </button>
                         <button class="btn-remove-image" id="removeProducedForImage" onclick="removeImage('producedFor')" style="display:none;">
-                            🗑️ Remove
+                            <span data-i18n="chartInfo.remove">🗑️ Remove</span>
                         </button>
                         <input type="file" id="producedForImageInput" accept=".jpg,.jpeg,.png,.bmp" class="hidden" onchange="handleImageUpload(event, 'producedFor')">
                     </div>
@@ -659,18 +734,20 @@
             </div>
 
             <div class="mb-10">
-                <label for="producedBy">🎓 Produced By:</label>
-                <input type="text" id="producedBy" placeholder="e.g., Training Institution Name">
+                <label for="producedBy" data-i18n="chartInfo.producedBy">🎓 Produced By:</label>
+                <input type="text" id="producedBy"
+                       placeholder="e.g., Training Institution Name"
+                       data-i18n-placeholder="chartInfo.producedBy.ph">
                 <div class="image-upload-container">
                     <div class="image-preview" id="producedByImagePreview">
-                        <span class="image-preview-placeholder">No image</span>
+                        <span class="image-preview-placeholder" data-i18n="chartInfo.noImage">No image</span>
                     </div>
                     <div>
                         <button class="btn-add-image" onclick="document.getElementById('producedByImageInput').click()">
-                            🖼️ Add Logo
+                            <span data-i18n="chartInfo.addLogo">🖼️ Add Logo</span>
                         </button>
                         <button class="btn-remove-image" id="removeProducedByImage" onclick="removeImage('producedBy')" style="display:none;">
-                            🗑️ Remove
+                            <span data-i18n="chartInfo.remove">🗑️ Remove</span>
                         </button>
                         <input type="file" id="producedByImageInput" accept=".jpg,.jpeg,.png,.bmp" class="hidden" onchange="handleImageUpload(event, 'producedBy')">
                     </div>
@@ -678,38 +755,50 @@
             </div>
 
             <div class="mb-10">
-                <label for="occupationTitle">💼 Occupation Title:</label>
-                <input type="text" id="occupationTitle" placeholder="e.g., Automotive Technician">
+                <label for="occupationTitle" data-i18n="chartInfo.occupationTitle">💼 Occupation Title:</label>
+                <input type="text" id="occupationTitle"
+                       placeholder="e.g., Automotive Technician"
+                       data-i18n-placeholder="chartInfo.occupationTitle.ph">
             </div>
 
             <div class="mb-10">
-                <label for="jobTitle">👔 Job Title:</label>
-                <input type="text" id="jobTitle" placeholder="e.g., Service Technician Level 2">
+                <label for="jobTitle" data-i18n="chartInfo.jobTitle">👔 Job Title:</label>
+                <input type="text" id="jobTitle"
+                       placeholder="e.g., Service Technician Level 2"
+                       data-i18n-placeholder="chartInfo.jobTitle.ph">
             </div>
         </div>
 
         <!-- Scope of Work -->
         <div class="ci-scope-block">
-            <label for="scopeOfWork">📋 Scope of Work / Occupational Definition:</label>
-            <p class="ci-field-hint">A concise paragraph describing what the occupation covers and where its boundaries lie. Used in exports and referenced for duty/task generation.</p>
-            <textarea id="scopeOfWork" rows="4" placeholder="Defines the key responsibilities and boundaries of this occupation within its work context. Includes typical tasks, tools, and work environments, and excludes roles or functions that fall under other occupations or specializations."></textarea>
+            <label for="scopeOfWork" data-i18n="chartInfo.scopeLabel">📋 Scope of Work / Occupational Definition:</label>
+            <p class="ci-field-hint" data-i18n="chartInfo.scopeHint">A concise paragraph describing what the occupation covers and where its boundaries lie. Used in exports and referenced for duty/task generation.</p>
+            <textarea id="scopeOfWork" rows="4"
+                      placeholder="Defines the key responsibilities and boundaries of this occupation within its work context."
+                      data-i18n-placeholder="chartInfo.scopePlaceholder"></textarea>
         </div>
 
         <!-- Workshop Panel -->
         <div class="ci-panel-block">
-            <h3 class="ci-panel-heading">👥 Workshop Panel</h3>
+            <h3 class="ci-panel-heading" data-i18n="chartInfo.workshopPanel">👥 Workshop Panel</h3>
             <div class="ci-panel-grid">
                 <div class="ci-panel-field">
-                    <label for="facilitators">👥 Facilitators:</label>
-                    <textarea id="facilitators" rows="5" placeholder="Enter facilitator names (one per line)"></textarea>
+                    <label for="facilitators" data-i18n="chartInfo.facilitators">👥 Facilitators:</label>
+                    <textarea id="facilitators" rows="5"
+                              placeholder="Enter facilitator names (one per line)"
+                              data-i18n-placeholder="chartInfo.facilitators.ph"></textarea>
                 </div>
                 <div class="ci-panel-field">
-                    <label for="observers">👁️ Observers:</label>
-                    <textarea id="observers" rows="5" placeholder="Enter observer names (one per line)"></textarea>
+                    <label for="observers" data-i18n="chartInfo.observers">👁️ Observers:</label>
+                    <textarea id="observers" rows="5"
+                              placeholder="Enter observer names (one per line)"
+                              data-i18n-placeholder="chartInfo.observers.ph"></textarea>
                 </div>
                 <div class="ci-panel-field">
-                    <label for="panelMembers">🎯 Panel Members:</label>
-                    <textarea id="panelMembers" rows="5" placeholder="Enter panel member names (one per line)"></textarea>
+                    <label for="panelMembers" data-i18n="chartInfo.panelMembers">🎯 Panel Members:</label>
+                    <textarea id="panelMembers" rows="5"
+                              placeholder="Enter panel member names (one per line)"
+                              data-i18n-placeholder="chartInfo.panelMembers.ph"></textarea>
                 </div>
             </div>
         </div>
@@ -724,32 +813,30 @@
         <!-- TABLE VIEW (default) ──────────────────────────── -->
         <div id="tableViewArea">
             <div class="duties-tab-header">
-                <h2>Duties and Tasks</h2>
+                <h2 data-i18n="duties.heading">Duties and Tasks</h2>
                 <div class="view-switcher">
-                    <button class="vsw-btn vsw-btn--active" id="vsw-table" disabled>📋 Table</button>
-                    <button class="vsw-btn" onclick="toggleCardView()">🃏 Card</button>
-                    <button class="vsw-btn" onclick="showWallView()">🧱 Wall</button>
+                    <button class="vsw-btn vsw-btn--active" id="vsw-table" disabled data-i18n="duties.viewTable">📋 Table</button>
+                    <button class="vsw-btn" onclick="toggleCardView()" data-i18n="duties.viewCard">🃏 Card</button>
+                    <button class="vsw-btn" onclick="showWallView()" data-i18n="duties.viewWall">🧱 Wall</button>
                 </div>
             </div>
             <div id="dutiesContainer"></div>
-            <button id="addDutyBtn" type="button" class="btn-add" onclick="addDuty()">➕ Add Duty</button>
+            <button id="addDutyBtn" type="button" class="btn-add" onclick="addDuty()" data-i18n="duties.addDuty">➕ Add Duty</button>
         </div>
 
         <!-- CARD VIEW (hidden until toggled) ──────────────── -->
-        <!-- Lives inside duties-tab so the tab strip is never
-             touched when switching views.                     -->
         <div id="cardViewContainer" style="display:none;">
             <div class="card-view-header">
-                <h2>🃏 Card View — Duties &amp; Tasks</h2>
+                <h2 data-i18n="duties.cardHeading">🃏 Card View — Duties &amp; Tasks</h2>
                 <div class="view-switcher">
-                    <button class="vsw-btn" onclick="toggleCardView()">📋 Table</button>
-                    <button class="vsw-btn vsw-btn--active" disabled>🃏 Card</button>
-                    <button class="vsw-btn" onclick="showWallView()">🧱 Wall</button>
+                    <button class="vsw-btn" onclick="toggleCardView()" data-i18n="duties.viewTable">📋 Table</button>
+                    <button class="vsw-btn vsw-btn--active" disabled data-i18n="duties.viewCard">🃏 Card</button>
+                    <button class="vsw-btn" onclick="showWallView()" data-i18n="duties.viewWall">🧱 Wall</button>
                 </div>
             </div>
             <div id="cardViewInner" class="cv-duties-grid"></div>
             <div class="card-view-footer">
-                <button type="button" class="cv-add-duty" onclick="cvAddDuty()">➕ Add Duty</button>
+                <button type="button" class="cv-add-duty" onclick="cvAddDuty()" data-i18n="duties.addDuty">➕ Add Duty</button>
             </div>
         </div>
 
@@ -759,19 +846,21 @@
          TAB 3 — ADDITIONAL INFO
          ══════════════════════════════════════════════════════ -->
     <div class="tab-content" id="additional-info-tab">
-        <h2>Additional Information</h2>
-        <p class="additional-info-intro">📝 Enter information for each section. Click the rename button to customize section headings.</p>
+        <h2 data-i18n="additionalInfo.heading">Additional Information</h2>
+        <p class="additional-info-intro" data-i18n="additionalInfo.intro">📝 Enter information for each section. Click the rename button to customize section headings.</p>
 
         <!-- Knowledge -->
         <div class="section-container">
             <div class="section-header-editable">
                 <h3 id="knowledgeHeading" contenteditable="false">Knowledge Requirements</h3>
                 <div class="section-header-actions">
-                    <button class="btn-rename" onclick="toggleEditHeading('knowledgeHeading')">✏️ Rename</button>
-                    <button class="btn-clear-section" onclick="clearSection('knowledgeInput','knowledgeHeading','Knowledge Requirements')">🗑️ Clear</button>
+                    <button class="btn-rename" onclick="toggleEditHeading('knowledgeHeading')" data-i18n="additionalInfo.rename">✏️ Rename</button>
+                    <button class="btn-clear-section" onclick="clearSection('knowledgeInput','knowledgeHeading','Knowledge Requirements')" data-i18n="additionalInfo.clear">🗑️ Clear</button>
                 </div>
             </div>
-            <textarea id="knowledgeInput" placeholder="Enter each knowledge requirement on a new line&#10;Example:&#10;• Understanding of electrical systems&#10;• Knowledge of safety protocols&#10;• Familiarity with diagnostic tools"></textarea>
+            <textarea id="knowledgeInput"
+                      placeholder="Enter each knowledge requirement on a new line"
+                      data-i18n-placeholder="section.knowledge.ph"></textarea>
         </div>
 
         <!-- Skills -->
@@ -779,11 +868,13 @@
             <div class="section-header-editable">
                 <h3 id="skillsHeading" contenteditable="false">Skills Requirements</h3>
                 <div class="section-header-actions">
-                    <button class="btn-rename" onclick="toggleEditHeading('skillsHeading')">✏️ Rename</button>
-                    <button class="btn-clear-section" onclick="clearSection('skillsInput','skillsHeading','Skills Requirements')">🗑️ Clear</button>
+                    <button class="btn-rename" onclick="toggleEditHeading('skillsHeading')" data-i18n="additionalInfo.rename">✏️ Rename</button>
+                    <button class="btn-clear-section" onclick="clearSection('skillsInput','skillsHeading','Skills Requirements')" data-i18n="additionalInfo.clear">🗑️ Clear</button>
                 </div>
             </div>
-            <textarea id="skillsInput" placeholder="Enter each skill requirement on a new line&#10;Example:&#10;• Ability to read technical diagrams&#10;• Proficiency in using hand tools&#10;• Strong problem-solving skills"></textarea>
+            <textarea id="skillsInput"
+                      placeholder="Enter each skill requirement on a new line"
+                      data-i18n-placeholder="section.skills.ph"></textarea>
         </div>
 
         <!-- Behaviors -->
@@ -791,11 +882,13 @@
             <div class="section-header-editable">
                 <h3 id="behaviorsHeading" contenteditable="false">Worker Behaviors/Traits</h3>
                 <div class="section-header-actions">
-                    <button class="btn-rename" onclick="toggleEditHeading('behaviorsHeading')">✏️ Rename</button>
-                    <button class="btn-clear-section" onclick="clearSection('behaviorsInput','behaviorsHeading','Worker Behaviors/Traits')">🗑️ Clear</button>
+                    <button class="btn-rename" onclick="toggleEditHeading('behaviorsHeading')" data-i18n="additionalInfo.rename">✏️ Rename</button>
+                    <button class="btn-clear-section" onclick="clearSection('behaviorsInput','behaviorsHeading','Worker Behaviors/Traits')" data-i18n="additionalInfo.clear">🗑️ Clear</button>
                 </div>
             </div>
-            <textarea id="behaviorsInput" placeholder="Enter each behavior or trait on a new line&#10;Example:&#10;• Attention to detail&#10;• Good communication skills&#10;• Team player&#10;• Safety conscious"></textarea>
+            <textarea id="behaviorsInput"
+                      placeholder="Enter each behavior or trait on a new line"
+                      data-i18n-placeholder="section.behaviors.ph"></textarea>
         </div>
 
         <!-- Tools -->
@@ -803,11 +896,13 @@
             <div class="section-header-editable">
                 <h3 id="toolsHeading" contenteditable="false">Tools, Equipment, Supplies and Materials</h3>
                 <div class="section-header-actions">
-                    <button class="btn-rename" onclick="toggleEditHeading('toolsHeading')">✏️ Rename</button>
-                    <button class="btn-clear-section" onclick="clearSection('toolsInput','toolsHeading','Tools, Equipment, Supplies and Materials')">🗑️ Clear</button>
+                    <button class="btn-rename" onclick="toggleEditHeading('toolsHeading')" data-i18n="additionalInfo.rename">✏️ Rename</button>
+                    <button class="btn-clear-section" onclick="clearSection('toolsInput','toolsHeading','Tools, Equipment, Supplies and Materials')" data-i18n="additionalInfo.clear">🗑️ Clear</button>
                 </div>
             </div>
-            <textarea id="toolsInput" placeholder="Enter each tool/equipment on a new line&#10;Example:&#10;• Digital multimeter&#10;• Pneumatic impact wrench&#10;• Safety glasses&#10;• Hydraulic lift"></textarea>
+            <textarea id="toolsInput"
+                      placeholder="Enter each tool/equipment on a new line"
+                      data-i18n-placeholder="section.tools.ph"></textarea>
         </div>
 
         <!-- Trends -->
@@ -815,11 +910,13 @@
             <div class="section-header-editable">
                 <h3 id="trendsHeading" contenteditable="false">Future Trends and Concerns</h3>
                 <div class="section-header-actions">
-                    <button class="btn-rename" onclick="toggleEditHeading('trendsHeading')">✏️ Rename</button>
-                    <button class="btn-clear-section" onclick="clearSection('trendsInput','trendsHeading','Future Trends and Concerns')">🗑️ Clear</button>
+                    <button class="btn-rename" onclick="toggleEditHeading('trendsHeading')" data-i18n="additionalInfo.rename">✏️ Rename</button>
+                    <button class="btn-clear-section" onclick="clearSection('trendsInput','trendsHeading','Future Trends and Concerns')" data-i18n="additionalInfo.clear">🗑️ Clear</button>
                 </div>
             </div>
-            <textarea id="trendsInput" placeholder="Enter each trend/concern on a new line&#10;Example:&#10;• Increased use of electric vehicles&#10;• Advanced driver assistance systems&#10;• Sustainability requirements&#10;• Automation in manufacturing"></textarea>
+            <textarea id="trendsInput"
+                      placeholder="Enter each trend/concern on a new line"
+                      data-i18n-placeholder="section.trends.ph"></textarea>
         </div>
 
         <!-- Acronyms -->
@@ -827,11 +924,13 @@
             <div class="section-header-editable">
                 <h3 id="acronymsHeading" contenteditable="false">Acronyms</h3>
                 <div class="section-header-actions">
-                    <button class="btn-rename" onclick="toggleEditHeading('acronymsHeading')">✏️ Rename</button>
-                    <button class="btn-clear-section" onclick="clearSection('acronymsInput','acronymsHeading','Acronyms')">🗑️ Clear</button>
+                    <button class="btn-rename" onclick="toggleEditHeading('acronymsHeading')" data-i18n="additionalInfo.rename">✏️ Rename</button>
+                    <button class="btn-clear-section" onclick="clearSection('acronymsInput','acronymsHeading','Acronyms')" data-i18n="additionalInfo.clear">🗑️ Clear</button>
                 </div>
             </div>
-            <textarea id="acronymsInput" placeholder="Enter acronyms and their definitions on separate lines&#10;Example:&#10;• OBD - On-Board Diagnostics&#10;• ECU - Engine Control Unit&#10;• TPMS - Tire Pressure Monitoring System&#10;• ABS - Anti-lock Braking System"></textarea>
+            <textarea id="acronymsInput"
+                      placeholder="Enter acronyms and their definitions on separate lines"
+                      data-i18n-placeholder="section.acronyms.ph"></textarea>
         </div>
 
         <!-- Career Path -->
@@ -839,11 +938,13 @@
             <div class="section-header-editable">
                 <h3 id="careerPathHeading" contenteditable="false">Career Path</h3>
                 <div class="section-header-actions">
-                    <button class="btn-rename" onclick="toggleEditHeading('careerPathHeading')">✏️ Rename</button>
-                    <button class="btn-clear-section" onclick="clearSection('careerPathInput','careerPathHeading','Career Path')">🗑️ Clear</button>
+                    <button class="btn-rename" onclick="toggleEditHeading('careerPathHeading')" data-i18n="additionalInfo.rename">✏️ Rename</button>
+                    <button class="btn-clear-section" onclick="clearSection('careerPathInput','careerPathHeading','Career Path')" data-i18n="additionalInfo.clear">🗑️ Clear</button>
                 </div>
             </div>
-            <textarea id="careerPathInput" placeholder="Enter career progression information on separate lines&#10;Example:&#10;• Entry Level: Technician Apprentice&#10;• Mid Level: Certified Technician&#10;• Advanced: Senior Technician / Specialist&#10;• Management: Shop Foreman / Service Manager"></textarea>
+            <textarea id="careerPathInput"
+                      placeholder="Enter career progression information on separate lines"
+                      data-i18n-placeholder="section.careerPath.ph"></textarea>
         </div>
 
         <!-- Custom Sections Container -->
@@ -851,7 +952,7 @@
 
         <!-- Add Section Button -->
         <div class="add-section-footer">
-            <button class="btn-add btn-add-section-main" onclick="addCustomSection()">➕ Add Section</button>
+        <button class="btn-add btn-add-section-main" onclick="addCustomSection()" data-i18n="additionalInfo.addSection">➕ Add Section</button>
         </div>
     </div>
 
@@ -867,70 +968,70 @@
         <div class="hc-hero">
             <div class="hc-hero-icon">❓</div>
             <div>
-                <h2 class="hc-hero-title">Help Center</h2>
-                <p class="hc-hero-sub">Everything you need to use DACUM Lite effectively</p>
+                <h2 class="hc-hero-title" data-i18n="help.heroTitle">Help Center</h2>
+                <p class="hc-hero-sub" data-i18n="help.heroSub">Everything you need to use DACUM Lite effectively</p>
             </div>
         </div>
         <div class="hc-section hc-quickstart">
-            <div class="hc-section-head"><span class="hc-section-icon">🚀</span><h3>Quick Start: How to Use DACUM Lite</h3></div>
+            <div class="hc-section-head"><span class="hc-section-icon">🚀</span><h3 data-i18n="help.quickStartTitle">Quick Start: How to Use DACUM Lite</h3></div>
             <ol class="hc-steps">
-                <li><span class="hc-step-n">1</span>Enter the <strong>Occupation Title</strong> and <strong>Job Title</strong> in the <em>Chart Info</em> tab.</li>
-                <li><span class="hc-step-n">2</span>Add a <strong>Scope of Work</strong> to define the occupational boundary.</li>
-                <li><span class="hc-step-n">3</span>Go to <em>Duties &amp; Tasks</em> — each new duty starts with one task automatically.</li>
-                <li><span class="hc-step-n">4</span>Use <strong>➕ Add Task</strong> inside each duty. Duties are labelled <strong>A, B, C…</strong> and tasks <strong>A1, A2, B1…</strong> automatically.</li>
-                <li><span class="hc-step-n">5</span><strong>Drag &amp; drop</strong> any task or duty to reorder — labels update instantly.</li>
-                <li><span class="hc-step-n">6</span>Switch to <strong>🃏 Card View</strong> or <strong>🧱 Wall View</strong> for different display modes.</li>
-                <li><span class="hc-step-n">7</span>Fill in <em>Additional Info</em> (Knowledge, Skills, Tools, Trends…) as needed.</li>
-                <li><span class="hc-step-n">8</span>Fill in <strong>Workshop Panel</strong> (Facilitators, Observers, Panel Members) in Chart Info.</li>
-                <li><span class="hc-step-n">9</span><strong>Export</strong> as PDF or Word document from the top toolbar.</li>
-                <li><span class="hc-step-n">10</span>Use <strong>📸 Snapshots</strong> to save named versions before major edits.</li>
+                <li><span class="hc-step-n">1</span><span data-i18n="help.step1" data-i18n-html="true">Enter the <strong>Occupation Title</strong> and <strong>Job Title</strong> in the <em>Chart Info</em> tab.</span></li>
+                <li><span class="hc-step-n">2</span><span data-i18n="help.step2" data-i18n-html="true">Add a <strong>Scope of Work</strong> to define the occupational boundary.</span></li>
+                <li><span class="hc-step-n">3</span><span data-i18n="help.step3" data-i18n-html="true">Go to <em>Duties &amp; Tasks</em> — each new duty starts with one task automatically.</span></li>
+                <li><span class="hc-step-n">4</span><span data-i18n="help.step4" data-i18n-html="true">Use <strong>➕ Add Task</strong> inside each duty. Duties are labelled <strong>A, B, C…</strong> and tasks <strong>A1, A2, B1…</strong> automatically.</span></li>
+                <li><span class="hc-step-n">5</span><span data-i18n="help.step5" data-i18n-html="true"><strong>Drag &amp; drop</strong> any task or duty to reorder — labels update instantly.</span></li>
+                <li><span class="hc-step-n">6</span><span data-i18n="help.step6" data-i18n-html="true">Switch to <strong>🃏 Card View</strong> or <strong>🧱 Wall View</strong> for different display modes.</span></li>
+                <li><span class="hc-step-n">7</span><span data-i18n="help.step7" data-i18n-html="true">Fill in <em>Additional Info</em> (Knowledge, Skills, Tools, Trends…) as needed.</span></li>
+                <li><span class="hc-step-n">8</span><span data-i18n="help.step8" data-i18n-html="true">Fill in <strong>Workshop Panel</strong> (Facilitators, Observers, Panel Members) in Chart Info.</span></li>
+                <li><span class="hc-step-n">9</span><span data-i18n="help.step9" data-i18n-html="true"><strong>Export</strong> as PDF or Word document from the top toolbar.</span></li>
+                <li><span class="hc-step-n">10</span><span data-i18n="help.step10" data-i18n-html="true">Use <strong>📸 Snapshots</strong> to save named versions before major edits.</span></li>
             </ol>
         </div>
         <div class="hc-tips-row">
-            <div class="hc-tip"><span class="hc-tip-icon">↩️</span><div><strong>Undo / Redo</strong><br>Every action is reversible. Use Ctrl+Z / Ctrl+Y or the toolbar buttons.</div></div>
-            <div class="hc-tip"><span class="hc-tip-icon">💾</span><div><strong>Auto-save</strong><br>Your work is saved automatically to the browser. Use Projects to manage multiple charts.</div></div>
-            <div class="hc-tip"><span class="hc-tip-icon">🧱</span><div><strong>Wall View</strong><br>Edit, reorder, add and delete duties &amp; tasks directly on the wall — no need to switch views.</div></div>
-            <div class="hc-tip"><span class="hc-tip-icon">🖨️</span><div><strong>Print Wall</strong><br>Use the Print button inside Wall View for A3 landscape output — ideal for workshop projection.</div></div>
+            <div class="hc-tip"><span class="hc-tip-icon">↩️</span><div><strong data-i18n="help.tipUndoTitle">Undo / Redo</strong><br><span data-i18n="help.tipUndoText">Every action is reversible. Use Ctrl+Z / Ctrl+Y or the toolbar buttons.</span></div></div>
+            <div class="hc-tip"><span class="hc-tip-icon">💾</span><div><strong data-i18n="help.tipAutoSaveTitle">Auto-save</strong><br><span data-i18n="help.tipAutoSaveText">Your work is saved automatically to the browser. Use Projects to manage multiple charts.</span></div></div>
+            <div class="hc-tip"><span class="hc-tip-icon">🧱</span><div><strong data-i18n="help.tipWallTitle">Wall View</strong><br><span data-i18n="help.tipWallText">Edit, reorder, add and delete duties &amp; tasks directly on the wall — no need to switch views.</span></div></div>
+            <div class="hc-tip"><span class="hc-tip-icon">🖨️</span><div><strong data-i18n="help.tipPrintTitle">Print Wall</strong><br><span data-i18n="help.tipPrintText">Use the Print button inside Wall View for A3 landscape output — ideal for workshop projection.</span></div></div>
         </div>
         <div class="hc-two-col">
             <div class="hc-card">
-                <div class="hc-card-head"><span class="hc-card-icon" style="background:#e0f2fe;">📘</span><h3>User Guide</h3></div>
-                <p class="hc-card-desc">Access the full documentation for DACUM Lite — includes detailed instructions, screenshots, and best practices.</p>
+                <div class="hc-card-head"><span class="hc-card-icon" style="background:#e0f2fe;">📘</span><h3 data-i18n="help.userGuideTitle">User Guide</h3></div>
+                <p class="hc-card-desc" data-i18n="help.userGuideDesc">Access the full documentation for DACUM Lite — includes detailed instructions, screenshots, and best practices.</p>
                 <div class="hc-guide-btns">
-                    <button class="hc-btn hc-btn--primary" onclick="window.open('user-guide.html','_blank')">📘 Open User Guide</button>
-                    <button class="hc-btn hc-btn--outline" onclick="window.open('user-guide.html','_blank')">🔗 View in New Tab</button>
+                    <button class="hc-btn hc-btn--primary" onclick="window.open('user-guide.html','_blank')" data-i18n="help.openUserGuide">📘 Open User Guide</button>
+                    <button class="hc-btn hc-btn--outline" onclick="window.open('user-guide.html','_blank')" data-i18n="help.viewNewTab">🔗 View in New Tab</button>
                 </div>
                 <div class="hc-qr-wrap">
                     <img src="qr-user-guide.png" alt="QR Code — DACUM Lite User Guide" style="width:140px;height:140px;border-radius:10px;display:block;">
-                    <p class="hc-qr-caption">Scan to open the User Guide on your mobile device</p>
+                    <p class="hc-qr-caption" data-i18n="help.qrCaption">Scan to open the User Guide on your mobile device</p>
                 </div>
             </div>
             <div class="hc-card">
-                <div class="hc-card-head"><span class="hc-card-icon" style="background:#f3e8ff;">🧑‍💻</span><h3>About the Creator</h3></div>
+                <div class="hc-card-head"><span class="hc-card-icon" style="background:#f3e8ff;">🧑‍💻</span><h3 data-i18n="help.aboutTitle">About the Creator</h3></div>
                 <div class="hc-creator-profile">
                     <div class="hc-avatar">HJ</div>
                     <div>
                         <div class="hc-creator-name">Husham Jawad Kadhim</div>
-                        <div class="hc-creator-role">Creator of DACUM Lite</div>
-                        <div class="hc-creator-bio">TVET Curriculum Developer &amp; Educational Technology Innovator</div>
+                        <div class="hc-creator-role" data-i18n="help.creatorRole">Creator of DACUM Lite</div>
+                        <div class="hc-creator-bio" data-i18n="help.creatorBio">TVET Curriculum Developer &amp; Educational Technology Innovator</div>
                     </div>
                 </div>
                 <div class="hc-contact-rows">
-                    <div class="hc-contact-row"><span class="hc-contact-icon">📧</span><div><div class="hc-contact-label">EMAIL</div><a class="hc-contact-val" href="mailto:hshaam77@gmail.com">hshaam77@gmail.com</a></div></div>
-                    <div class="hc-contact-row"><span class="hc-contact-icon">💼</span><div><div class="hc-contact-label">LINKEDIN</div><a class="hc-contact-val" href="https://www.linkedin.com/in/husham-jawad-kadhim-954006200/" target="_blank" rel="noopener">husham-jawad-kadhim</a></div></div>
+                    <div class="hc-contact-row"><span class="hc-contact-icon">📧</span><div><div class="hc-contact-label" data-i18n="help.emailLabel">EMAIL</div><a class="hc-contact-val" href="mailto:hshaam77@gmail.com">hshaam77@gmail.com</a></div></div>
+                    <div class="hc-contact-row"><span class="hc-contact-icon">💼</span><div><div class="hc-contact-label" data-i18n="help.linkedinLabel">LINKEDIN</div><a class="hc-contact-val" href="https://www.linkedin.com/in/husham-jawad-kadhim-954006200/" target="_blank" rel="noopener">husham-jawad-kadhim</a></div></div>
                 </div>
-                <div class="hc-getintouch"><span style="font-size:1.3em;">💡</span><div><strong>Get in Touch</strong><p>For questions, feedback, suggestions, or collaboration opportunities, please reach out using the contact information above.</p></div></div>
+                <div class="hc-getintouch"><span style="font-size:1.3em;">💡</span><div><strong data-i18n="help.getInTouchTitle">Get in Touch</strong><p data-i18n="help.getInTouchText">For questions, feedback, suggestions, or collaboration opportunities, please reach out using the contact information above.</p></div></div>
             </div>
         </div>
     </div><!-- /#help-tab -->
 
     <!-- Copyright ─────────────────────────────────────── -->
     <div class="copyright">
-        <p class="copyright-main">© 2026 DACUM Lite | by Husham Jawad Kadhim | Version 3.1.0 | All Rights Reserved</p>
+        <p class="copyright-main" data-i18n="copyright.main">© 2026 DACUM Lite | by Husham Jawad Kadhim | Version 3.1.0 | All Rights Reserved</p>
         <p class="copyright-disclaimer">
-            <strong>Disclaimer:</strong> This tool is provided "as is" without warranty of any kind. The developer assumes no
+            <strong>Disclaimer:</strong> <span data-i18n="copyright.disclaimer">This tool is provided "as is" without warranty of any kind. The developer assumes no
             responsibility for any inaccuracies, errors, omissions, or inconsistencies in the generated documents.
-            Users are solely responsible for verifying and validating all content before use.
+            Users are solely responsible for verifying and validating all content before use.</span>
         </p>
     </div>
 
@@ -940,7 +1041,7 @@
 
 <!-- Snapshot panel -->
 <div id="snapshotPanel">
-    <h4>📸 Saved Snapshots</h4>
+    <h4 data-i18n="snapshot.panelTitle">📸 Saved Snapshots</h4>
     <div id="snapshotList"></div>
 </div>
 
@@ -951,23 +1052,23 @@
     <div class="wv-topbar">
         <!-- Row 1: controls -->
         <div class="wv-topbar-row wv-topbar-row--controls">
-            <button class="wv-btn wv-btn--exit" onclick="exitWallView()">✕ Exit</button>
+            <button class="wv-btn wv-btn--exit" onclick="exitWallView()" data-i18n="wall.exit">✕ Exit</button>
             <div class="wv-zoom-group">
                 <button class="wv-btn wv-btn--zoom" onclick="wallViewZoom(-5)" title="Zoom out −5%">🔍−</button>
                 <span class="wv-zoom-label" id="wvZoomLevel">100%</span>
                 <button class="wv-btn wv-btn--zoom" onclick="wallViewZoom(+5)" title="Zoom in +5%">🔍+</button>
             </div>
-            <button class="wv-btn" onclick="resetWallZoom()" title="Reset zoom">↺ Reset</button>
-            <button class="wv-btn wv-btn--print" onclick="printWallView()">🖨️ Print</button>
-            <button class="wv-btn" id="wvFullscreenBtn" onclick="toggleWallFullscreen()">⛶ Full</button>
+            <button class="wv-btn" onclick="resetWallZoom()" title="Reset zoom" data-i18n="wall.reset">↺ Reset</button>
+            <button class="wv-btn wv-btn--print" onclick="printWallView()" data-i18n="wall.print">🖨️ Print</button>
+            <button class="wv-btn" id="wvFullscreenBtn" onclick="toggleWallFullscreen()" data-i18n="wall.fullscreen">⛶ Fullscreen</button>
         </div>
         <!-- Row 2: title + view switcher -->
         <div class="wv-topbar-row wv-topbar-row--nav">
-            <span class="wv-title">🧱 Wall View</span>
+            <span class="wv-title" data-i18n="wall.title">🧱 Wall View</span>
             <div class="wv-view-tabs">
-                <button class="wv-view-tab" onclick="exitWallView(); showCardView();">🃏 Card</button>
-                <button class="wv-view-tab" onclick="exitWallView(); showTableView();">📋 Table</button>
-                <button class="wv-view-tab wv-view-tab--active">🧱 Wall</button>
+                <button class="wv-view-tab" onclick="exitWallView(); showCardView();" data-i18n="wall.tabCard">🃏 Card</button>
+                <button class="wv-view-tab" onclick="exitWallView(); showTableView();" data-i18n="wall.tabTable">📋 Table</button>
+                <button class="wv-view-tab wv-view-tab--active" data-i18n="wall.tabWall">🧱 Wall</button>
             </div>
         </div>
     </div>
