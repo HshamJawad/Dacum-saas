@@ -40,11 +40,13 @@ export function createProject(name = 'Untitled Project') {
     const now = _now();
     const proj = {
         id,
-        name:      (name || 'Untitled Project').trim(),
-        createdAt: now,
-        updatedAt: now,
-        state:     _defaultState(),
-        snapshots: []
+        name:          (name || 'Untitled Project').trim(),
+        createdAt:     now,
+        updatedAt:     now,
+        state:         _defaultState(),
+        snapshots:     [],
+        chartInfo:     null,
+        additionalInfo:null
     };
     _store.projects[id] = proj;
     return proj;
@@ -172,13 +174,15 @@ export function loadProjects() {
 /**
  * Overwrite stored state/snapshots for the currently active project.
  * Called by the save hook in app.js before every persistProjects().
- * Either key can be omitted to leave that field unchanged.
+ * Any key can be omitted to leave that field unchanged.
  */
-export function updateActiveProjectData({ state, snapshots } = {}) {
+export function updateActiveProjectData({ state, snapshots, chartInfo, additionalInfo } = {}) {
     const proj = getActiveProject();
     if (!proj) return;
-    if (state     !== undefined) proj.state     = _clone(state);
-    if (snapshots !== undefined) proj.snapshots = _clone(snapshots);
+    if (state          !== undefined) proj.state          = _clone(state);
+    if (snapshots      !== undefined) proj.snapshots      = _clone(snapshots);
+    if (chartInfo      !== undefined) proj.chartInfo      = _clone(chartInfo);
+    if (additionalInfo !== undefined) proj.additionalInfo = _clone(additionalInfo);
     proj.updatedAt = _now();
 }
 
