@@ -4,6 +4,7 @@ const APP_VERSION = "3.0.0";
 // Connects all modules, initialises project manager, renders
 // the sidebar, and bootstraps the app on DOMContentLoaded.
 // ============================================================
+import { t }                                                                from './i18n.js';
 import { AppState, StateManager, applyProjectState, extractProjectState } from './state.js';
 import { showStatus }                                                       from './design-system.js';
 import {
@@ -88,7 +89,7 @@ initFileEngine({
     // After a successful import: switch context + refresh sidebar
     onImportSuccess: (project) => {
         _switchToProject(project.id);
-        showStatus('Project "' + escapeHtml(project.name) + '" imported ✓', 'success');
+        showStatus(t('status.projectImported', { name: escapeHtml(project.name) }), 'success');
     },
 });
 
@@ -133,12 +134,12 @@ function _applyViewMode(mode) {
 function _relDate(isoString) {
     const diff = Date.now() - new Date(isoString).getTime();
     const m    = Math.floor(diff / 60000);
-    if (m < 1)  return 'just now';
-    if (m < 60) return m + 'm ago';
+    if (m < 1)  return t('time.justNow');
+    if (m < 60) return t('time.minutesAgo', { n: m });
     const h = Math.floor(m / 60);
-    if (h < 24) return h + 'h ago';
+    if (h < 24) return t('time.hoursAgo', { n: h });
     const d = Math.floor(h / 24);
-    if (d < 7)  return d + 'd ago';
+    if (d < 7)  return t('time.daysAgo', { n: d });
     return new Date(isoString).toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
@@ -206,7 +207,7 @@ function _switchToProject(id) {
     _loadProjectIntoUI(proj);
     renderSidebar();
 
-    if (currentId !== id) showStatus('Switched to "' + escapeHtml(proj.name) + '" ✓', 'success');
+    if (currentId !== id) showStatus(t('status.projectSwitched', { name: escapeHtml(proj.name) }), 'success');
 }
 
 // ── Sidebar open/close ─────────────────────────────────────────
@@ -252,7 +253,10 @@ export function renderSidebar(filterText) {
 
     // Update footer count
     if (countEl) {
-        countEl.textContent = all.length + ' project' + (all.length !== 1 ? 's' : '');
+        const n = all.length;
+        countEl.textContent = n === 1
+            ? t('sidebar.projectCount.one')
+            : t('sidebar.projectCount.other', { n });
     }
 
     // Filter + sort newest-updated first
@@ -261,7 +265,7 @@ export function renderSidebar(filterText) {
         .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 
     if (visible.length === 0) {
-        list.innerHTML = '<div class="sb-empty">No projects found</div>';
+        list.innerHTML = '<div class="sb-empty">' + t('sidebar.noProjects') + '</div>';
         return;
     }
 
@@ -269,6 +273,9 @@ export function renderSidebar(filterText) {
     visible.forEach(proj => {
         const isActive  = proj.id === active?.id;
         const dutyCount = proj.state?.duties?.length || 0;
+        const dutyStr   = dutyCount === 1
+            ? t('sidebar.dutyCount.one')
+            : t('sidebar.dutyCount.other', { n: dutyCount });
         const dateStr   = _relDate(proj.updatedAt);
 
         // ── Editing-mode flag ─────────────────────────────────
@@ -312,7 +319,7 @@ export function renderSidebar(filterText) {
             const newName = nameEl.textContent.trim();
             if (!newName) {
                 // Revert to last-known good name
-                nameEl.textContent = proj.name || 'Untitled Project';
+                nameEl.textContent = proj.name || t('project.untitled');
                 return;
             }
             if (newName !== proj.name) {
@@ -328,7 +335,7 @@ export function renderSidebar(filterText) {
         metaEl.className = 'sb-card-meta';
         metaEl.innerHTML =
             `<span class="sb-meta-item">🕐 ${dateStr}</span>` +
-            `<span class="sb-meta-item">📋 ${dutyCount} ${dutyCount === 1 ? 'duty' : 'duties'}</span>`;
+            `<span class="sb-meta-item">📋 ${dutyStr}</span>`;
 
         // ── Card body (switches project on click) ─────────────
         const cardBody = document.createElement('div');
@@ -345,7 +352,7 @@ export function renderSidebar(filterText) {
         const renameBtn = document.createElement('button');
         renameBtn.type      = 'button';
         renameBtn.className = 'sb-rename-btn';
-        renameBtn.title     = 'Rename project';
+        renameBtn.title     = t('project.renameTip');
         renameBtn.textContent = '✎';
 
         renameBtn.addEventListener('click', (e) => {
@@ -369,7 +376,7 @@ export function renderSidebar(filterText) {
         const deleteBtn = document.createElement('button');
         deleteBtn.type      = 'button';
         deleteBtn.className = 'sb-delete-btn';
-        deleteBtn.title     = 'Delete project';
+        deleteBtn.title     = t('project.deleteTip');
         deleteBtn.textContent = '×';
         deleteBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -410,6 +417,11 @@ window.addEventListener('DOMContentLoaded', () => {
     // ── 4. Bind events and render UI ───────────────────────────
     EventBinder.init();
     renderSidebar();
+
+    // ── 4b. Re-render sidebar on language change ───────────────
+    // applyTranslations() handles static DOM; sidebar is dynamic
+    // so we re-render it whenever the language is toggled.
+    document.addEventListener('dacum:langchange', () => renderSidebar());
 
     // ── 5. Sidebar initial state (mobile starts closed) ────────
     if (window.innerWidth <= 768) {
@@ -529,7 +541,7 @@ window.addEventListener('DOMContentLoaded', () => {
         pmSwitchProject: (id) => _switchToProject(id),
 
         pmNewProject: () => {
-            const name = prompt('Project name:', 'New Project');
+            const name = prompt(t('project.prompt.new'), t('project.prompt.newDefault'));
             if (name === null || !name.trim()) return;
             _saveCurrentProject();
             const proj = createProject(name.trim());
@@ -537,14 +549,14 @@ window.addEventListener('DOMContentLoaded', () => {
             persistProjects();
             _loadProjectIntoUI(proj);
             renderSidebar();
-            showStatus('Created "' + escapeHtml(proj.name) + '" ✓', 'success');
+            showStatus(t('status.projectCreated', { name: escapeHtml(proj.name) }), 'success');
         },
 
         pmDeleteProject: (id) => {
             const all  = getAllProjects();
-            if (all.length <= 1) { alert('Cannot delete the only project.'); return; }
+            if (all.length <= 1) { alert(t('project.alert.cannotDelete')); return; }
             const proj = all.find(p => p.id === id);
-            if (!confirm('Delete "' + (proj?.name || 'this project') + '"?\nThis cannot be undone.')) return;
+            if (!confirm(t('project.confirm.delete', { name: proj?.name || '' }))) return;
             const wasActive = getActiveProject()?.id === id;
             deleteProject(id);
             if (wasActive) {
@@ -553,12 +565,12 @@ window.addEventListener('DOMContentLoaded', () => {
             }
             persistProjects();
             renderSidebar();
-            if (wasActive) showStatus('Project deleted. Switched to "' + escapeHtml(getActiveProject()?.name) + '"', 'success');
+            if (wasActive) showStatus(t('status.projectDeleted', { name: escapeHtml(getActiveProject()?.name) }), 'success');
         },
 
         pmRenameProject: (id) => {
             const proj = getAllProjects().find(p => p.id === id);
-            const newName = prompt('Rename project:', proj?.name || '');
+            const newName = prompt(t('project.prompt.rename'), proj?.name || '');
             if (newName === null || !newName.trim()) return;
             renameProject(id, newName.trim());
             persistProjects();

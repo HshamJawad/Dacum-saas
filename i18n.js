@@ -103,6 +103,9 @@ export function setLang(lang) {
     // Update the toggle button label
     const btn = document.getElementById('langToggleBtn');
     if (btn) btn.textContent = t('lang.switchTo');
+
+    // Notify dynamic renderers (e.g. renderSidebar in app.js) to re-render
+    document.dispatchEvent(new CustomEvent('dacum:langchange'));
 }
 
 // ══════════════════════════════════════════════════════════════
