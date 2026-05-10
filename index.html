@@ -1014,8 +1014,8 @@
                 <div class="hc-card-head"><span class="hc-card-icon" style="background:#e0f2fe;">📘</span><h3 data-i18n="help.userGuideTitle">User Guide</h3></div>
                 <p class="hc-card-desc" data-i18n="help.userGuideDesc">Access the full documentation for DACUM Lite — includes detailed instructions, screenshots, and best practices.</p>
                 <div class="hc-guide-btns">
-                    <button class="hc-btn hc-btn--primary" onclick="window.open('user-guide.html','_blank')" data-i18n="help.openUserGuide">📘 Open User Guide</button>
-                    <button class="hc-btn hc-btn--outline" onclick="window.open('user-guide.html','_blank')" data-i18n="help.viewNewTab">🔗 View in New Tab</button>
+                    <button class="hc-btn hc-btn--primary" onclick="window.open(document.documentElement.lang==='ar'?'user-guide-ar.html':'user-guide.html','_blank')" data-i18n="help.openUserGuide">📘 Open User Guide</button>
+                    <button class="hc-btn hc-btn--outline" onclick="window.open(document.documentElement.lang==='ar'?'user-guide-ar.html':'user-guide.html','_blank')" data-i18n="help.viewNewTab">🔗 View in New Tab</button>
                 </div>
                 <div class="hc-qr-wrap">
                     <img src="qr-user-guide.png" alt="QR Code — DACUM Lite User Guide" style="width:140px;height:140px;border-radius:10px;display:block;">

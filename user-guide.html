@@ -82,6 +82,24 @@ body {
 .nav-link:hover { background: rgba(79,70,229,.08); color: var(--indigo); }
 .nav-link.active { background: var(--indigo); color: #fff; }
 
+/* Language switch button */
+.nav-lang-btn {
+  margin-left: auto;
+  padding: 5px 14px;
+  border-radius: 7px;
+  font-size: .82em;
+  font-weight: 700;
+  background: rgba(79,70,229,.08);
+  color: var(--indigo);
+  border: 1px solid rgba(79,70,229,.18);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all .14s;
+  text-decoration: none;
+}
+.nav-lang-btn:hover { background: var(--indigo); color: #fff; }
+
 /* ── Hero ───────────────────────────────────────────────────── */
 .hero {
   background: linear-gradient(145deg, #3730a3 0%, #4f46e5 45%, #7c3aed 100%);
@@ -433,6 +451,7 @@ footer {
     <a class="nav-link" href="#shortcuts">Shortcuts</a>
     <a class="nav-link" href="#about">About</a>
   </div>
+  <a class="nav-lang-btn" href="user-guide-ar.html">🌐 العربية</a>
 </nav>
 
 <!-- ── Hero ───────────────────────────────────────────────── -->
