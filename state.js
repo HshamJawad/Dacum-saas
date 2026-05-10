@@ -12,11 +12,12 @@
  * it back TO the project record via the save hook in storage.js.
  */
 export const AppState = {
-    duties:      [],   // Array<{ id: string, title: string, tasks: Array<{id, text}> }>
-    taskCounts:  {},   // { dutyId: number } — monotonic counter per duty
-    dutyCount:   0,    // monotonic global duty counter
-    isCardView:  true, // default to card view; overridden by user preference in app.js
-    snapshots:   []    // Single source of truth — history.js reads/writes here directly
+    duties:      [],
+    taskCounts:  {},
+    dutyCount:   0,
+    isCardView:  true,
+    snapshots:   [],
+    chartImages: { producedFor: null, producedBy: null }  // base64 logos
 };
 
 /**
@@ -82,10 +83,9 @@ export function applyProjectState(projectState) {
     AppState.duties      = JSON.parse(JSON.stringify(projectState.duties      || []));
     AppState.taskCounts  = JSON.parse(JSON.stringify(projectState.taskCounts  || {}));
     AppState.dutyCount   = typeof projectState.dutyCount === 'number' ? projectState.dutyCount : 0;
-    AppState.isCardView  = false; // always open projects in table view for clean UX
-    // Snapshots live in AppState — restore them here so history.js
-    // always has the correct array without any separate wiring in app.js.
+    AppState.isCardView  = false;
     AppState.snapshots   = JSON.parse(JSON.stringify(projectState.snapshots   || []));
+    AppState.chartImages = JSON.parse(JSON.stringify(projectState.chartImages || { producedFor: null, producedBy: null }));
 }
 
 /**
@@ -94,10 +94,11 @@ export function applyProjectState(projectState) {
  */
 export function extractProjectState() {
     return JSON.parse(JSON.stringify({
-        duties:     AppState.duties,
-        taskCounts: AppState.taskCounts,
-        dutyCount:  AppState.dutyCount,
-        isCardView: AppState.isCardView,
-        snapshots:  AppState.snapshots   // persisted as part of state — no separate array needed
+        duties:      AppState.duties,
+        taskCounts:  AppState.taskCounts,
+        dutyCount:   AppState.dutyCount,
+        isCardView:  AppState.isCardView,
+        snapshots:   AppState.snapshots,
+        chartImages: AppState.chartImages
     }));
 }

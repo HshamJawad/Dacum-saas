@@ -31,9 +31,10 @@ import {
     showWallView, exitWallView, wallViewZoom, resetWallZoom,
     printWallView, toggleWallFullscreen,
     showTableView, showCardView,
-    // Project serialisation helpers (chart info + additional info)
+    // Project serialisation helpers (chart info + additional info + images)
     getChartInfoData, applyChartInfoData,
     getAdditionalInfoData, applyAdditionalInfoData,
+    applyChartImages,
 } from './events.js';
 import {
     createProject, deleteProject, renameProject,
@@ -180,11 +181,15 @@ function _loadProjectIntoUI(proj) {
         AppState.snapshots = JSON.parse(JSON.stringify(proj.snapshots));
     }
 
-    // 4. Restore Chart Info + Additional Info DOM fields
-    //    (stored at proj.chartInfo / proj.additionalInfo since this fix)
-    //    Backward-compatible: old records without these keys → DOM stays blank
+    // 4a. Restore Chart Info text fields + Additional Info sections
+    //     Backward-compatible: old records without these keys → DOM stays blank
     applyChartInfoData(proj.chartInfo || null);
     applyAdditionalInfoData(proj.additionalInfo || null);
+
+    // 4b. Restore logo images from AppState.chartImages
+    //     applyProjectState() already loaded them into AppState.chartImages above.
+    //     Now sync the module-level variables and DOM previews in events.js.
+    applyChartImages(AppState.chartImages);
 
     // 5. Clear undo/redo — command closures cannot be serialised
     StateManager.undoStack = [];

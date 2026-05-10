@@ -232,6 +232,7 @@ export function clearAll() {
     // Clear images
     producedForImage = null;
     producedByImage  = null;
+    AppState.chartImages = { producedFor: null, producedBy: null };
     _clearImagePreview('producedFor');
     _clearImagePreview('producedBy');
 
@@ -312,8 +313,13 @@ export function handleImageUpload(event, imageType) {
     const reader = new FileReader();
     reader.onload = e => {
         const imageData = e.target.result;
-        if (imageType === 'producedFor') producedForImage = imageData;
-        else if (imageType === 'producedBy') producedByImage = imageData;
+        if (imageType === 'producedFor') {
+            producedForImage = imageData;
+            AppState.chartImages.producedFor = imageData;
+        } else if (imageType === 'producedBy') {
+            producedByImage = imageData;
+            AppState.chartImages.producedBy = imageData;
+        }
         const cap = imageType.charAt(0).toUpperCase() + imageType.slice(1);
         const preview = document.getElementById(imageType + 'ImagePreview');
         if (preview) { preview.innerHTML = `<img src="${imageData}" alt="${imageType} logo">`; preview.classList.add('has-image'); }
@@ -326,8 +332,13 @@ export function handleImageUpload(event, imageType) {
 
 export function removeImage(imageType) {
     if (!confirm(t('confirm.removeImage'))) return;
-    if (imageType === 'producedFor') producedForImage = null;
-    else if (imageType === 'producedBy') producedByImage = null;
+    if (imageType === 'producedFor') {
+        producedForImage = null;
+        AppState.chartImages.producedFor = null;
+    } else if (imageType === 'producedBy') {
+        producedByImage = null;
+        AppState.chartImages.producedBy = null;
+    }
     _clearImagePreview(imageType);
     showStatus(t('status.imageRemoved'), 'success');
 }
@@ -1227,12 +1238,24 @@ export function getChartInfoData() {
         facilitators:   document.getElementById('facilitators')?.value   || '',
         observers:      document.getElementById('observers')?.value      || '',
         panelMembers:   document.getElementById('panelMembers')?.value   || '',
-        producedForImage: producedForImage || null,
-        producedByImage:  producedByImage  || null,
     };
 }
 
-/** Restore chart-info fields + logos to the DOM */
+/**
+ * Restore logo images from AppState.chartImages into the module-level
+ * variables and the DOM preview elements.
+ * Called by _loadProjectIntoUI in app.js after applyProjectState().
+ */
+export function applyChartImages(chartImages) {
+    const pf = chartImages?.producedFor || null;
+    const pb = chartImages?.producedBy  || null;
+    producedForImage = pf;
+    producedByImage  = pb;
+    _restoreImagePreview('producedFor', pf);
+    _restoreImagePreview('producedBy',  pb);
+}
+
+/** Restore chart-info text fields to the DOM */
 export function applyChartInfoData(info) {
     if (!info || typeof info !== 'object') return;
     const set = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined) el.value = val; };
@@ -1245,10 +1268,6 @@ export function applyChartInfoData(info) {
     set('facilitators',    info.facilitators);
     set('observers',       info.observers);
     set('panelMembers',    info.panelMembers);
-
-    // Restore logo images
-    _restoreImagePreview('producedFor', info.producedForImage);
-    _restoreImagePreview('producedBy',  info.producedByImage);
 }
 
 function _restoreImagePreview(type, imageData) {
