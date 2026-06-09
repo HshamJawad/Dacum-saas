@@ -2,7 +2,7 @@
 // events.js — Feature Functions & Event Binding Layer
 // ============================================================
 import { t, getLang }                           from './i18n.js';
-import { loadArabicFont, getArabicFontName, ra }    from './arabic-font.js';
+// arabic-font.js no longer used for PDF export (html2canvas renders natively)
 import { AppState, StateManager }               from './state.js';
 import {
     pushCommand, undo, redo,
@@ -783,50 +783,38 @@ export async function exportToWord() {
 // ══════════════════════════════════════════════════════════════
 
 export async function exportToPDF() {
+    // ──────────────────────────────────────────────────────────
+    // html2canvas approach
+    //
+    // jsPDF cannot encode Arabic Unicode Presentation Forms
+    // correctly via custom TTF (U+FExx mis-encoded as Latin-1).
+    // Instead:
+    //   1. Build a styled HTML "print page" in a hidden iframe
+    //   2. Browser shapes + renders Arabic natively (zero encoding issues)
+    //   3. html2canvas captures each .page div as a canvas
+    //   4. jsPDF inserts canvas images -> final PDF
+    // ──────────────────────────────────────────────────────────
+
     const isArabic = getLang() === 'ar';
+    const dir      = isArabic ? 'rtl' : 'ltr';
+    const fontFace = isArabic
+        ? "'Amiri', 'Noto Naskh Arabic', 'Segoe UI', sans-serif"
+        : "'Helvetica Neue', Arial, sans-serif";
+
     try {
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-
-        // ── Arabic font + RTL setup ───────────────────────────
-        let arabicFontName = null;
-        if (isArabic) {
-            arabicFontName = await loadArabicFont(pdf);
-            if (arabicFontName) {
-                pdf.setR2L(true);
-            } else {
-                console.warn('[PDF] Arabic font not loaded. Arabic text may not render correctly.');
-            }
+        if (typeof window.html2canvas === 'undefined') {
+            showStatus(t('status.html2canvasMissing') || 'html2canvas library not loaded', 'error');
+            return;
         }
+        const { jsPDF } = window.jspdf;
 
-        // Helper: set the right font for current language
-        const setBodyFont = () => {
-            if (isArabic && arabicFontName) {
-                pdf.setFont(arabicFontName, 'normal');
-            } else {
-                pdf.setFont('helvetica', 'normal');
-            }
-        };
-        const setBoldFont = () => {
-            if (isArabic && arabicFontName) {
-                pdf.setFont(arabicFontName, 'normal');
-            } else {
-                pdf.setFont('helvetica', 'bold');
-            }
-        };
-
-        // Helper: apply ra() shaping only when Arabic font is loaded
-        const txt = (str) => (isArabic && arabicFontName) ? ra(str) : str;
-
-        const dacumDateInput        = document.getElementById('dacumDate');
-        const producedForInput      = document.getElementById('producedFor');
-        const producedByInput       = document.getElementById('producedBy');
-        const sectorInput           = document.getElementById('sector');
-        const occupationTitleInput  = document.getElementById('occupationTitle');
-        const jobTitleInput         = document.getElementById('jobTitle');
-        const toolsInput            = document.getElementById('toolsInput');
-        const trendsInput           = document.getElementById('trendsInput');
-        const acronymsInput         = document.getElementById('acronymsInput');
+        // ── Read form values ──────────────────────────────────
+        const dacumDateInput       = document.getElementById('dacumDate');
+        const producedForInput     = document.getElementById('producedFor');
+        const producedByInput      = document.getElementById('producedBy');
+        const sectorInput          = document.getElementById('sector');
+        const occupationTitleInput = document.getElementById('occupationTitle');
+        const jobTitleInput        = document.getElementById('jobTitle');
 
         let dacumDateFormatted = '';
         if (dacumDateInput.value) {
@@ -838,262 +826,286 @@ export async function exportToPDF() {
             return;
         }
 
-        // ── Spacing constants ─────────────────────────────────────
-        // All spacing in mm. These replace the scattered magic numbers
-        // that caused overlapping text and tight cells.
-        const margin      = 10;
-        const cellPadX    = 3;     // horizontal padding inside every cell
-        const cellPadTop  = 5;     // top padding so text never touches border
-        const cellPadBot  = 4;     // extra bottom clearance per cell
-        const lineH12     = 5.5;   // line pitch for 12pt text  (12pt ≈ 4.2mm glyph)
-        const lineH14     = 6.5;   // line pitch for 14pt text  (14pt ≈ 4.9mm glyph)
-        const minRowH     = 20;    // minimum task row height (mm)
-        const minHdrH     = 16;    // minimum duty-header height (mm)
+        showStatus(t('status.pdfGenerating') || 'Generating PDF\u2026', 'success');
 
-        const pageWidth  = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        let yPos = margin + 10;
-
-        // ── Title page ────────────────────────────────────────────
-        pdf.setFontSize(18); setBoldFont();
-        pdf.text(txt(t('pdf.chartTitle', { title: occupationTitleInput.value })), pageWidth / 2, yPos, { align: 'center' });
-        yPos += 18;
-
-        const leftColX = margin + 10;
-        const rightColX = pageWidth / 2 + 10;
-        const rightColW = pageWidth / 2 - margin - 10 - 10;
-        let leftY = yPos, rightY = yPos;
-
-        // Left column — Produced For / By / Date
-        if (producedForInput.value) {
-            pdf.setFontSize(16); setBoldFont();
-            pdf.text(txt(t('pdf.producedFor')), leftColX, leftY); leftY += 8;
-            if (producedForImage) { try { pdf.addImage(producedForImage, 'JPEG', leftColX, leftY, 30, 20); leftY += 24; } catch(e) {} }
-            setBodyFont(); pdf.setFontSize(13);
-            pdf.text(txt(producedForInput.value), leftColX, leftY); leftY += 16;
-        }
-        if (producedByInput.value) {
-            pdf.setFontSize(16); setBoldFont();
-            pdf.text(txt(t('pdf.producedBy')), leftColX, leftY); leftY += 8;
-            if (producedByImage) { try { pdf.addImage(producedByImage, 'JPEG', leftColX, leftY, 30, 20); leftY += 24; } catch(e) {} }
-            setBodyFont(); pdf.setFontSize(13);
-            pdf.text(txt(producedByInput.value), leftColX, leftY); leftY += 14;
-        }
-        if (dacumDateFormatted) {
-            pdf.setFontSize(13); setBoldFont();
-            pdf.text(dacumDateFormatted, leftColX, leftY);
-        }
-
-        // Right column — Sector / Occupation / Job title
-        if (sectorInput && sectorInput.value) {
-            pdf.setFontSize(14); setBoldFont();
-            pdf.text(txt(t('pdf.sector')), rightColX, rightY); rightY += 7;
-            setBodyFont(); pdf.setFontSize(13);
-            const sectorLines = pdf.splitTextToSize(txt(sectorInput.value), rightColW);
-            pdf.text(sectorLines, rightColX + 3, rightY);
-            rightY += sectorLines.length * lineH12 + 8;
-        }
-
-        pdf.setFontSize(14); setBoldFont();
-        pdf.text(txt(t('pdf.occupationTitle')), rightColX, rightY); rightY += 7;
-        setBodyFont(); pdf.setFontSize(13);
-        const occupationLines = pdf.splitTextToSize(txt(occupationTitleInput.value), rightColW);
-        pdf.text(occupationLines, rightColX + 3, rightY);
-        rightY += occupationLines.length * lineH12 + 8;
-
-        pdf.setFontSize(14); setBoldFont();
-        pdf.text(txt(t('pdf.jobTitle')), rightColX, rightY); rightY += 7;
-        setBodyFont(); pdf.setFontSize(13);
-        const jobLines = pdf.splitTextToSize(txt(jobTitleInput.value), rightColW);
-        pdf.text(jobLines, rightColX + 3, rightY);
-
-        // ── DACUM chart grid ──────────────────────────────────────
-        pdf.addPage('a4', 'landscape'); yPos = margin + 5;
         const duties = AppState.duties.map(d => ({
             duty:  d.title,
-            tasks: d.tasks.map(t => t.text).filter(t => t.trim() !== '')
+            tasks: d.tasks.map(tk => tk.text).filter(tk => tk.trim() !== '')
         }));
-        if (duties.length === 0) { showStatus(t('status.pdfNoDuties'), 'error'); return; }
 
-        pdf.setFillColor(200, 200, 200);
-        pdf.rect(margin, yPos, pageWidth-(margin*2), 10, 'FD');
-        pdf.setFontSize(14); setBoldFont();
-        pdf.text(txt(t('pdf.dutiesAndTasks')), pageWidth/2, yPos + 7, { align: 'center' });
-        yPos += 10;
-
-        const maxCols  = 4;
-        const chartWidth = pageWidth - (margin * 2);
-        const colWidth   = chartWidth / maxCols;
-        const innerW     = colWidth - (cellPadX * 2);
-        let dutyIndex = 0;
-
-        while (dutyIndex < duties.length) {
-            const dtr = Math.min(maxCols, duties.length - dutyIndex);
-
-            // ── Duty header row ───────────────────────────────────
-            let maxHeaderHeight = minHdrH;
-            for (let col = 0; col < dtr; col++) {
-                pdf.setFontSize(12); setBoldFont();
-                const letter = String.fromCharCode(65 + dutyIndex + col);
-                const lines  = pdf.splitTextToSize(
-                    txt(t('pdf.dutyLabel', { letter, title: duties[dutyIndex + col].duty })), innerW
-                );
-                const h = cellPadTop + lines.length * lineH12 + cellPadBot;
-                maxHeaderHeight = Math.max(maxHeaderHeight, h);
+        // ── Shared CSS ────────────────────────────────────────
+        const baseCSS = `
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body {
+                font-family: ${fontFace};
+                direction: ${dir};
+                background: #fff;
+                color: #111;
+                font-size: 13px;
+                line-height: 1.5;
             }
-            for (let col = 0; col < dtr; col++) {
-                const x = margin + (col * colWidth);
-                const letter = String.fromCharCode(65 + dutyIndex + col);
-                pdf.setFillColor(220, 220, 220);
-                pdf.rect(x, yPos, colWidth, maxHeaderHeight, 'FD');
-                pdf.setFontSize(12); setBoldFont();
-                const lines = pdf.splitTextToSize(
-                    txt(t('pdf.dutyLabel', { letter, title: duties[dutyIndex + col].duty })), innerW
-                );
-                pdf.text(lines, x + cellPadX, yPos + cellPadTop);
+            .page {
+                width: 1122px;
+                min-height: 794px;
+                padding: 48px 56px;
+                background: #fff;
             }
-            yPos += maxHeaderHeight;
+            h1 { font-size: 22px; text-align: center; margin-bottom: 20px; color: #1e3a5f; }
+            h2 { font-size: 16px; text-align: center; margin-bottom: 14px; color: #1e3a5f; }
+            .info-grid { display: flex; gap: 32px; margin-bottom: 20px; }
+            .info-col  { flex: 1; }
+            .info-row  { margin-bottom: 8px; }
+            .info-label { font-weight: bold; font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+            .info-value { font-size: 14px; color: #1e3a5f; }
+            .info-img   { max-height: 60px; max-width: 140px; object-fit: contain; display: block; margin: 4px 0; }
+            .grid { display: flex; gap: 0; border: 2px solid #1e3a5f; border-radius: 6px; overflow: hidden; }
+            .duty-col { flex: 1; display: flex; flex-direction: column; border-inline-end: 1px solid #cbd5e1; }
+            .duty-col:last-child { border-inline-end: none; }
+            .duty-header {
+                background: #1e3a5f;
+                color: #fff;
+                font-weight: bold;
+                font-size: 12px;
+                padding: 8px 10px;
+                min-height: 44px;
+                display: flex;
+                align-items: flex-start;
+            }
+            .task-cell {
+                padding: 6px 10px;
+                font-size: 11px;
+                border-top: 1px solid #e2e8f0;
+                min-height: 34px;
+                background: #fff;
+            }
+            .task-cell:nth-child(even) { background: #f8fafc; }
+            .task-label { font-weight: bold; color: #1e3a5f; font-size: 10px; display: block; margin-bottom: 2px; }
+            .section-title {
+                font-size: 15px; font-weight: bold; color: #1e3a5f;
+                margin-bottom: 14px; border-bottom: 2px solid #1e3a5f; padding-bottom: 6px;
+            }
+            .section-grid  { display: flex; gap: 28px; }
+            .section-col   { flex: 1; }
+            .section-col h3 { font-size: 12px; font-weight: bold; color: #334155; margin-bottom: 6px; margin-top: 12px; }
+            .section-col ul { list-style: disc; padding-inline-start: 18px; font-size: 11px; }
+            .section-col ul li { margin-bottom: 3px; }
+        `;
 
-            // ── Task rows ─────────────────────────────────────────
-            const maxTasks = Math.max(
-                ...duties.slice(dutyIndex, dutyIndex + dtr).map(d => d.tasks.length)
-            );
-            for (let taskRow = 0; taskRow < maxTasks; taskRow++) {
-                let rowHeight = minRowH;
-                for (let col = 0; col < dtr; col++) {
-                    const task = duties[dutyIndex + col].tasks[taskRow];
-                    if (task) {
-                        pdf.setFontSize(11); setBodyFont();
-                        const taskLines  = pdf.splitTextToSize(txt(task), innerW);
-                        const totalLines = 1 + taskLines.length;
-                        const h = cellPadTop + totalLines * lineH12 + cellPadBot;
-                        rowHeight = Math.max(rowHeight, h);
+        // ── Page builder helpers ──────────────────────────────
+
+        function esc(s) {
+            return String(s || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        function getDutyLetter(idx) {
+            const L = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            return idx < 26 ? L[idx] : L[Math.floor(idx/26)-1] + L[idx%26];
+        }
+
+        function makeInfoPage() {
+            const occ  = esc(occupationTitleInput.value);
+            const job  = esc(jobTitleInput.value);
+            const pFor = esc(producedForInput.value);
+            const pBy  = esc(producedByInput.value);
+            const sec  = sectorInput ? esc(sectorInput.value) : '';
+            const date = esc(dacumDateFormatted);
+
+            let leftHTML = '';
+            if (pFor) {
+                leftHTML += `<div class="info-row">
+                    <div class="info-label">${esc(t('pdf.producedFor'))}</div>`;
+                if (producedForImage)
+                    leftHTML += `<img class="info-img" src="${producedForImage}">`;
+                leftHTML += `<div class="info-value">${pFor}</div></div>`;
+            }
+            if (pBy) {
+                leftHTML += `<div class="info-row">
+                    <div class="info-label">${esc(t('pdf.producedBy'))}</div>`;
+                if (producedByImage)
+                    leftHTML += `<img class="info-img" src="${producedByImage}">`;
+                leftHTML += `<div class="info-value">${pBy}</div></div>`;
+            }
+            if (date)
+                leftHTML += `<div class="info-row"><div class="info-value">${date}</div></div>`;
+
+            let rightHTML = '';
+            if (sec)
+                rightHTML += `<div class="info-row">
+                    <div class="info-label">${esc(t('pdf.sector'))}</div>
+                    <div class="info-value">${sec}</div></div>`;
+            rightHTML += `<div class="info-row">
+                <div class="info-label">${esc(t('pdf.occupationTitle'))}</div>
+                <div class="info-value">${occ}</div></div>`;
+            rightHTML += `<div class="info-row">
+                <div class="info-label">${esc(t('pdf.jobTitle'))}</div>
+                <div class="info-value">${job}</div></div>`;
+
+            return `<div class="page">
+                <h1>${esc(t('pdf.chartTitle', { title: occupationTitleInput.value }))}</h1>
+                <div class="info-grid">
+                    <div class="info-col">${leftHTML}</div>
+                    <div class="info-col">${rightHTML}</div>
+                </div>
+            </div>`;
+        }
+
+        function makeDutiesPages() {
+            if (duties.length === 0) return '';
+            let pages = '';
+            const COLS = 4;
+            for (let i = 0; i < duties.length; i += COLS) {
+                const chunk   = duties.slice(i, i + COLS);
+                const letters = chunk.map((_, ci) => getDutyLetter(i + ci));
+                const maxTasks = Math.max(...chunk.map(d => d.tasks.length), 0);
+
+                let gridHTML = '<div class="grid">';
+                chunk.forEach((duty, ci) => {
+                    gridHTML += `<div class="duty-col">
+                        <div class="duty-header">${letters[ci]}: ${esc(duty.duty)}</div>`;
+                    for (let ti = 0; ti < maxTasks; ti++) {
+                        const task = duty.tasks[ti] || '';
+                        gridHTML += `<div class="task-cell">`;
+                        if (task)
+                            gridHTML += `<span class="task-label">${letters[ci]}${ti+1}</span>${esc(task)}`;
+                        gridHTML += `</div>`;
                     }
-                }
-
-                if (yPos + rowHeight > pageHeight - margin - 5) {
-                    pdf.addPage('a4', 'landscape'); yPos = margin + 5;
-                    pdf.setFillColor(200, 200, 200);
-                    pdf.rect(margin, yPos, pageWidth-(margin*2), 10, 'FD');
-                    pdf.setFontSize(14); setBoldFont();
-                    pdf.text(txt(t('pdf.dutiesAndTasksCont')), pageWidth/2, yPos + 7, { align: 'center' });
-                    yPos += 10;
-                }
-
-                setBodyFont(); pdf.setFontSize(11);
-                for (let col = 0; col < dtr; col++) {
-                    const x    = margin + (col * colWidth);
-                    const task = duties[dutyIndex + col].tasks[taskRow];
-                    pdf.rect(x, yPos, colWidth, rowHeight, 'S');
-                    if (task) {
-                        const letter    = String.fromCharCode(65 + dutyIndex + col);
-                        const labelLine = txt(t('pdf.taskLabel', { letter, n: taskRow + 1 }));
-                        const taskLines = pdf.splitTextToSize(txt(task), innerW);
-                        setBoldFont();
-                        pdf.text(labelLine, x + cellPadX, yPos + cellPadTop);
-                        setBodyFont();
-                        pdf.text(taskLines, x + cellPadX, yPos + cellPadTop + lineH12);
-                    }
-                }
-                yPos += rowHeight;
-            }
-
-            dutyIndex += dtr;
-            if (dutyIndex < duties.length) {
-                pdf.addPage('a4', 'landscape'); yPos = margin + 5;
-                pdf.setFillColor(200, 200, 200);
-                pdf.rect(margin, yPos, pageWidth-(margin*2), 10, 'FD');
-                pdf.setFontSize(14); setBoldFont();
-                pdf.text(txt(t('pdf.dutiesAndTasksCont')), pageWidth/2, yPos + 7, { align: 'center' });
-                yPos += 10;
-            }
-        }
-
-        // ── Knowledge / Skills / Behaviors ───────────────────────
-        const kt = document.getElementById('knowledgeInput').value.trim();
-        const st = document.getElementById('skillsInput').value.trim();
-        const bt = document.getElementById('behaviorsInput').value.trim();
-        if (kt || st || bt) {
-            pdf.addPage('a4', 'landscape'); yPos = margin + 5;
-            pdf.setFontSize(14); setBoldFont();
-            pdf.text(txt(t('pdf.generalKnowledge')), pageWidth/2, yPos, { align: 'center' }); yPos += 10;
-            const tw = (pageWidth - (margin * 2)) / 3;
-            let c1Y = yPos, c2Y = yPos, c3Y = yPos;
-            const pdfSection = (text, heading, x, yRef) => {
-                pdf.setFontSize(13); setBoldFont();
-                pdf.text(txt(heading), x, yRef); yRef += 8;
-                pdf.setFontSize(11); setBodyFont();
-                text.split('\n').filter(l => l.trim()).forEach(item => {
-                    pdf.text(txt(item.trim().replace(/^[•\-*]\s*/, '')), x, yRef);
-                    yRef += lineH12;
+                    gridHTML += `</div>`;
                 });
-                return yRef;
-            };
-            if (kt) c1Y = pdfSection(kt, document.getElementById('knowledgeHeading').textContent, margin, c1Y);
-            if (st) c2Y = pdfSection(st, document.getElementById('skillsHeading').textContent, margin + tw, c2Y);
-            if (bt) c3Y = pdfSection(bt, document.getElementById('behaviorsHeading').textContent, margin + tw * 2, c3Y);
-        }
+                gridHTML += '</div>';
 
-        // ── Tools & Trends ────────────────────────────────────────
-        const tools  = toolsInput.value.trim()  ? toolsInput.value.split('\n').filter(l => l.trim())  : [];
-        const trends = trendsInput.value.trim() ? trendsInput.value.split('\n').filter(l => l.trim()) : [];
-        if (tools.length || trends.length) {
-            pdf.addPage('a4', 'landscape'); yPos = margin + 5;
-            const hw = (pageWidth - (margin * 2) - 5) / 2;
-            let lY = yPos, rY = yPos;
-            if (tools.length) {
-                pdf.setFontSize(13); setBoldFont();
-                pdf.text(txt(document.getElementById('toolsHeading').textContent), margin, lY); lY += 8;
-                pdf.setFontSize(11); setBodyFont();
-                tools.forEach(item => { pdf.text(txt(item.trim().replace(/^[•\-*]\s*/, '')), margin, lY); lY += lineH12; });
+                const heading = i === 0
+                    ? esc(t('pdf.dutiesAndTasks'))
+                    : esc(t('pdf.dutiesAndTasksCont'));
+
+                pages += `<div class="page"><h2>${heading}</h2>${gridHTML}</div>`;
             }
-            if (trends.length) {
-                pdf.setFontSize(13); setBoldFont();
-                pdf.text(txt(document.getElementById('trendsHeading').textContent), margin + hw + 5, rY); rY += 8;
-                pdf.setFontSize(11); setBodyFont();
-                trends.forEach(item => { pdf.text(txt(item.trim().replace(/^[•\-*]\s*/, '')), margin + hw + 5, rY); rY += lineH12; });
-            }
+            return pages;
         }
 
-        // ── Acronyms ──────────────────────────────────────────────
-        if (acronymsInput.value.trim()) {
-            pdf.addPage('a4', 'landscape'); yPos = margin + 5;
-            pdf.setFontSize(13); setBoldFont();
-            pdf.text(txt(document.getElementById('acronymsHeading').textContent), margin, yPos); yPos += 8;
-            pdf.setFontSize(11); setBodyFont();
-            acronymsInput.value.split('\n').filter(l => l.trim()).forEach(a => {
-                pdf.text(txt(a.trim().replace(/^[•\-*]\s*/, '')), margin, yPos); yPos += lineH12;
+        function makeAdditionalPage() {
+            const sections = [
+                { id: 'knowledgeInput',  hId: 'knowledgeHeading'  },
+                { id: 'skillsInput',     hId: 'skillsHeading'     },
+                { id: 'behaviorsInput',  hId: 'behaviorsHeading'  },
+                { id: 'toolsInput',      hId: 'toolsHeading'      },
+                { id: 'trendsInput',     hId: 'trendsHeading'     },
+                { id: 'acronymsInput',   hId: 'acronymsHeading'   },
+                { id: 'careerPathInput', hId: 'careerPathHeading' },
+            ].map(({ id, hId }) => ({
+                heading: document.getElementById(hId)?.textContent || '',
+                content: document.getElementById(id)?.value.trim() || ''
+            })).filter(s => s.content);
+
+            document.querySelectorAll('#customSectionsContainer .section-container').forEach(div => {
+                const h  = div.querySelector('h3');
+                const ta = div.querySelector('textarea');
+                if (h && ta && ta.value.trim())
+                    sections.push({ heading: h.textContent, content: ta.value.trim() });
             });
-        }
 
-        // ── Career Path ───────────────────────────────────────────
-        const cpi = document.getElementById('careerPathInput');
-        if (cpi && cpi.value.trim()) {
-            pdf.addPage('a4', 'landscape'); yPos = margin + 5;
-            pdf.setFontSize(13); setBoldFont();
-            pdf.text(txt(document.getElementById('careerPathHeading').textContent), margin, yPos); yPos += 8;
-            pdf.setFontSize(11); setBodyFont();
-            cpi.value.split('\n').filter(l => l.trim()).forEach(item => {
-                pdf.text(txt(item.trim().replace(/^[•\-*]\s*/, '')), margin, yPos); yPos += lineH12;
+            if (sections.length === 0) return '';
+
+            const col1 = [], col2 = [], col3 = [];
+            sections.forEach((s, i) => {
+                if      (i % 3 === 0) col1.push(s);
+                else if (i % 3 === 1) col2.push(s);
+                else                  col3.push(s);
             });
-        }
 
-        // ── Custom sections ───────────────────────────────────────
-        document.querySelectorAll('#customSectionsContainer .section-container').forEach(div => {
-            const h = div.querySelector('h3'), t = div.querySelector('textarea');
-            if (h && t && t.value.trim()) {
-                pdf.addPage('a4', 'landscape'); yPos = margin + 5;
-                pdf.setFontSize(13); setBoldFont();
-                pdf.text(txt(h.textContent), margin, yPos); yPos += 8;
-                pdf.setFontSize(11); setBodyFont();
-                t.value.split('\n').filter(l => l.trim()).forEach(item => {
-                    pdf.text(txt(item.trim().replace(/^[•\-*]\s*/, '')), margin, yPos); yPos += lineH12;
+            let html = `<div class="page">
+                <div class="section-title">${esc(t('word.additionalInfo'))}</div>
+                <div class="section-grid">`;
+
+            [col1, col2, col3].forEach(col => {
+                html += '<div class="section-col">';
+                col.forEach(s => {
+                    html += `<h3>${esc(s.heading)}</h3><ul>`;
+                    s.content.split('\n').filter(l => l.trim()).forEach(line => {
+                        html += `<li>${esc(line.trim().replace(/^[*\-\u2022]\s*/, ''))}</li>`;
+                    });
+                    html += '</ul>';
                 });
-            }
+                html += '</div>';
+            });
+
+            html += '</div></div>';
+            return html;
+        }
+
+        // ── Assemble full HTML doc ────────────────────────────
+        const fullHTML = [
+            `<!DOCTYPE html><html lang="${isArabic ? 'ar' : 'en'}" dir="${dir}">`,
+            `<head><meta charset="utf-8"><style>${baseCSS}</style></head>`,
+            '<body>',
+            makeInfoPage(),
+            makeDutiesPages(),
+            makeAdditionalPage(),
+            '</body></html>'
+        ].join('\n');
+
+        // ── Render in a hidden off-screen iframe ──────────────
+        const iframe = document.createElement('iframe');
+        iframe.style.cssText = [
+            'position:fixed', 'top:-9999px', 'left:-9999px',
+            'width:1122px', 'height:794px',
+            'border:none', 'visibility:hidden', 'pointer-events:none'
+        ].join(';');
+        document.body.appendChild(iframe);
+
+        await new Promise(resolve => {
+            iframe.onload = resolve;
+            iframe.srcdoc = fullHTML;
         });
 
-        pdf.save(`${occupationTitleInput.value}_${jobTitleInput.value}_DACUM_Chart.pdf`);
+        // Extra tick: let custom fonts (Amiri via @font-face) paint
+        await new Promise(r => setTimeout(r, 600));
+
+        const iDoc  = iframe.contentDocument;
+        const pages = iDoc.querySelectorAll('.page');
+
+        if (pages.length === 0) {
+            document.body.removeChild(iframe);
+            showStatus(t('status.pdfNoDuties'), 'error');
+            return;
+        }
+
+        // ── Capture + build PDF ───────────────────────────────
+        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        const PW  = pdf.internal.pageSize.getWidth();   // 297 mm
+        const PH  = pdf.internal.pageSize.getHeight();  // 210 mm
+
+        for (let pi = 0; pi < pages.length; pi++) {
+            const canvas = await window.html2canvas(pages[pi], {
+                scale:              2,
+                useCORS:            true,
+                backgroundColor:    '#ffffff',
+                allowTaint:         false,
+                foreignObjectRendering: false,
+                windowWidth:        1122,
+                windowHeight:       794,
+                logging:            false,
+            });
+
+            const imgData = canvas.toDataURL('image/jpeg', 0.95);
+            const ratio   = Math.min(PW / canvas.width, PH / canvas.height);
+            const imgW    = canvas.width  * ratio;
+            const imgH    = canvas.height * ratio;
+            const offX    = (PW - imgW) / 2;
+            const offY    = (PH - imgH) / 2;
+
+            if (pi > 0) pdf.addPage('a4', 'landscape');
+            pdf.addImage(imgData, 'JPEG', offX, offY, imgW, imgH);
+        }
+
+        document.body.removeChild(iframe);
+
+        const safeName = (s) => s.replace(/[^a-zA-Z0-9\u0600-\u06FF_\-]/g, '_');
+        pdf.save(`${safeName(occupationTitleInput.value)}_${safeName(jobTitleInput.value)}_DACUM_Chart.pdf`);
         showStatus(t('status.pdfExported'), 'success');
+
     } catch (err) {
         console.error('Error generating PDF:', err);
         showStatus(t('status.pdfExportError', { msg: err.message }), 'error');
