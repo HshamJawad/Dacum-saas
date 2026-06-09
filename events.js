@@ -2,7 +2,7 @@
 // events.js — Feature Functions & Event Binding Layer
 // ============================================================
 import { t, getLang }                           from './i18n.js';
-import { loadArabicFont, getArabicFontName }    from './arabic-font.js';
+import { loadArabicFont, getArabicFontName, ra }    from './arabic-font.js';
 import { AppState, StateManager }               from './state.js';
 import {
     pushCommand, undo, redo,
@@ -226,7 +226,7 @@ export function clearAll() {
     if (!confirm(t('confirm.clearAll'))) return;
 
     // Clear Chart Info fields
-    ['dacumDate', 'producedFor', 'producedBy', 'occupationTitle', 'jobTitle']
+    ['dacumDate', 'producedFor', 'producedBy', 'sector', 'occupationTitle', 'jobTitle']
         .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
 
     // Clear images
@@ -795,7 +795,6 @@ export async function exportToPDF() {
             if (arabicFontName) {
                 pdf.setR2L(true);
             } else {
-                // No font file found — warn user but continue with Latin font
                 console.warn('[PDF] Arabic font not loaded. Arabic text may not render correctly.');
             }
         }
@@ -810,15 +809,19 @@ export async function exportToPDF() {
         };
         const setBoldFont = () => {
             if (isArabic && arabicFontName) {
-                pdf.setFont(arabicFontName, 'normal'); // Tajawal/Cairo have no separate bold TTF loaded
+                pdf.setFont(arabicFontName, 'normal');
             } else {
                 pdf.setFont('helvetica', 'bold');
             }
         };
 
+        // Helper: apply ra() shaping only when Arabic font is loaded
+        const txt = (str) => (isArabic && arabicFontName) ? ra(str) : str;
+
         const dacumDateInput        = document.getElementById('dacumDate');
         const producedForInput      = document.getElementById('producedFor');
         const producedByInput       = document.getElementById('producedBy');
+        const sectorInput           = document.getElementById('sector');
         const occupationTitleInput  = document.getElementById('occupationTitle');
         const jobTitleInput         = document.getElementById('jobTitle');
         const toolsInput            = document.getElementById('toolsInput');
@@ -853,46 +856,55 @@ export async function exportToPDF() {
 
         // ── Title page ────────────────────────────────────────────
         pdf.setFontSize(18); setBoldFont();
-        pdf.text(t('pdf.chartTitle', { title: occupationTitleInput.value }), pageWidth / 2, yPos, { align: 'center' });
+        pdf.text(txt(t('pdf.chartTitle', { title: occupationTitleInput.value })), pageWidth / 2, yPos, { align: 'center' });
         yPos += 18;
 
         const leftColX = margin + 10;
         const rightColX = pageWidth / 2 + 10;
-        const rightColW = pageWidth / 2 - margin - 10 - 10;  // available width for right column
+        const rightColW = pageWidth / 2 - margin - 10 - 10;
         let leftY = yPos, rightY = yPos;
 
         // Left column — Produced For / By / Date
         if (producedForInput.value) {
             pdf.setFontSize(16); setBoldFont();
-            pdf.text(t('pdf.producedFor'), leftColX, leftY); leftY += 8;
+            pdf.text(txt(t('pdf.producedFor')), leftColX, leftY); leftY += 8;
             if (producedForImage) { try { pdf.addImage(producedForImage, 'JPEG', leftColX, leftY, 30, 20); leftY += 24; } catch(e) {} }
             setBodyFont(); pdf.setFontSize(13);
-            pdf.text(producedForInput.value, leftColX, leftY); leftY += 16;
+            pdf.text(txt(producedForInput.value), leftColX, leftY); leftY += 16;
         }
         if (producedByInput.value) {
             pdf.setFontSize(16); setBoldFont();
-            pdf.text(t('pdf.producedBy'), leftColX, leftY); leftY += 8;
+            pdf.text(txt(t('pdf.producedBy')), leftColX, leftY); leftY += 8;
             if (producedByImage) { try { pdf.addImage(producedByImage, 'JPEG', leftColX, leftY, 30, 20); leftY += 24; } catch(e) {} }
             setBodyFont(); pdf.setFontSize(13);
-            pdf.text(producedByInput.value, leftColX, leftY); leftY += 14;
+            pdf.text(txt(producedByInput.value), leftColX, leftY); leftY += 14;
         }
         if (dacumDateFormatted) {
             pdf.setFontSize(13); setBoldFont();
             pdf.text(dacumDateFormatted, leftColX, leftY);
         }
 
-        // Right column — Occupation / Job title
+        // Right column — Sector / Occupation / Job title
+        if (sectorInput && sectorInput.value) {
+            pdf.setFontSize(14); setBoldFont();
+            pdf.text(txt(t('pdf.sector')), rightColX, rightY); rightY += 7;
+            setBodyFont(); pdf.setFontSize(13);
+            const sectorLines = pdf.splitTextToSize(txt(sectorInput.value), rightColW);
+            pdf.text(sectorLines, rightColX + 3, rightY);
+            rightY += sectorLines.length * lineH12 + 8;
+        }
+
         pdf.setFontSize(14); setBoldFont();
-        pdf.text(t('pdf.occupationTitle'), rightColX, rightY); rightY += 7;
+        pdf.text(txt(t('pdf.occupationTitle')), rightColX, rightY); rightY += 7;
         setBodyFont(); pdf.setFontSize(13);
-        const occupationLines = pdf.splitTextToSize(occupationTitleInput.value, rightColW);
+        const occupationLines = pdf.splitTextToSize(txt(occupationTitleInput.value), rightColW);
         pdf.text(occupationLines, rightColX + 3, rightY);
         rightY += occupationLines.length * lineH12 + 8;
 
         pdf.setFontSize(14); setBoldFont();
-        pdf.text(t('pdf.jobTitle'), rightColX, rightY); rightY += 7;
+        pdf.text(txt(t('pdf.jobTitle')), rightColX, rightY); rightY += 7;
         setBodyFont(); pdf.setFontSize(13);
-        const jobLines = pdf.splitTextToSize(jobTitleInput.value, rightColW);
+        const jobLines = pdf.splitTextToSize(txt(jobTitleInput.value), rightColW);
         pdf.text(jobLines, rightColX + 3, rightY);
 
         // ── DACUM chart grid ──────────────────────────────────────
@@ -906,31 +918,29 @@ export async function exportToPDF() {
         pdf.setFillColor(200, 200, 200);
         pdf.rect(margin, yPos, pageWidth-(margin*2), 10, 'FD');
         pdf.setFontSize(14); setBoldFont();
-        pdf.text(t('pdf.dutiesAndTasks'), pageWidth/2, yPos + 7, { align: 'center' });
+        pdf.text(txt(t('pdf.dutiesAndTasks')), pageWidth/2, yPos + 7, { align: 'center' });
         yPos += 10;
 
         const maxCols  = 4;
         const chartWidth = pageWidth - (margin * 2);
         const colWidth   = chartWidth / maxCols;
-        const innerW     = colWidth - (cellPadX * 2);  // text wraps within this width
+        const innerW     = colWidth - (cellPadX * 2);
         let dutyIndex = 0;
 
         while (dutyIndex < duties.length) {
             const dtr = Math.min(maxCols, duties.length - dutyIndex);
 
             // ── Duty header row ───────────────────────────────────
-            // First pass: measure the tallest header across all columns.
             let maxHeaderHeight = minHdrH;
             for (let col = 0; col < dtr; col++) {
                 pdf.setFontSize(12); setBoldFont();
                 const letter = String.fromCharCode(65 + dutyIndex + col);
                 const lines  = pdf.splitTextToSize(
-                    t('pdf.dutyLabel', { letter, title: duties[dutyIndex + col].duty }), innerW
+                    txt(t('pdf.dutyLabel', { letter, title: duties[dutyIndex + col].duty })), innerW
                 );
                 const h = cellPadTop + lines.length * lineH12 + cellPadBot;
                 maxHeaderHeight = Math.max(maxHeaderHeight, h);
             }
-            // Second pass: draw with uniform height.
             for (let col = 0; col < dtr; col++) {
                 const x = margin + (col * colWidth);
                 const letter = String.fromCharCode(65 + dutyIndex + col);
@@ -938,7 +948,7 @@ export async function exportToPDF() {
                 pdf.rect(x, yPos, colWidth, maxHeaderHeight, 'FD');
                 pdf.setFontSize(12); setBoldFont();
                 const lines = pdf.splitTextToSize(
-                    t('pdf.dutyLabel', { letter, title: duties[dutyIndex + col].duty }), innerW
+                    txt(t('pdf.dutyLabel', { letter, title: duties[dutyIndex + col].duty })), innerW
                 );
                 pdf.text(lines, x + cellPadX, yPos + cellPadTop);
             }
@@ -949,33 +959,27 @@ export async function exportToPDF() {
                 ...duties.slice(dutyIndex, dutyIndex + dtr).map(d => d.tasks.length)
             );
             for (let taskRow = 0; taskRow < maxTasks; taskRow++) {
-                // Measure the tallest cell in this row first.
                 let rowHeight = minRowH;
                 for (let col = 0; col < dtr; col++) {
                     const task = duties[dutyIndex + col].tasks[taskRow];
                     if (task) {
                         pdf.setFontSize(11); setBodyFont();
-                        const letter = String.fromCharCode(65 + dutyIndex + col);
-                        // Label on its own line, then the task text wrapped below.
-                        const labelLine  = `Task ${letter}${taskRow + 1}:`;
-                        const taskLines  = pdf.splitTextToSize(task, innerW);
-                        const totalLines = 1 + taskLines.length;   // label + wrapped task
+                        const taskLines  = pdf.splitTextToSize(txt(task), innerW);
+                        const totalLines = 1 + taskLines.length;
                         const h = cellPadTop + totalLines * lineH12 + cellPadBot;
                         rowHeight = Math.max(rowHeight, h);
                     }
                 }
 
-                // Page break check.
                 if (yPos + rowHeight > pageHeight - margin - 5) {
                     pdf.addPage('a4', 'landscape'); yPos = margin + 5;
                     pdf.setFillColor(200, 200, 200);
                     pdf.rect(margin, yPos, pageWidth-(margin*2), 10, 'FD');
                     pdf.setFontSize(14); setBoldFont();
-                    pdf.text(t('pdf.dutiesAndTasksCont'), pageWidth/2, yPos + 7, { align: 'center' });
+                    pdf.text(txt(t('pdf.dutiesAndTasksCont')), pageWidth/2, yPos + 7, { align: 'center' });
                     yPos += 10;
                 }
 
-                // Draw all cells in this row.
                 setBodyFont(); pdf.setFontSize(11);
                 for (let col = 0; col < dtr; col++) {
                     const x    = margin + (col * colWidth);
@@ -983,9 +987,8 @@ export async function exportToPDF() {
                     pdf.rect(x, yPos, colWidth, rowHeight, 'S');
                     if (task) {
                         const letter    = String.fromCharCode(65 + dutyIndex + col);
-                        const labelLine = t('pdf.taskLabel', { letter, n: taskRow + 1 });
-                        const taskLines = pdf.splitTextToSize(task, innerW);
-                        // Label in bold, then task text in normal below it.
+                        const labelLine = txt(t('pdf.taskLabel', { letter, n: taskRow + 1 }));
+                        const taskLines = pdf.splitTextToSize(txt(task), innerW);
                         setBoldFont();
                         pdf.text(labelLine, x + cellPadX, yPos + cellPadTop);
                         setBodyFont();
@@ -1001,7 +1004,7 @@ export async function exportToPDF() {
                 pdf.setFillColor(200, 200, 200);
                 pdf.rect(margin, yPos, pageWidth-(margin*2), 10, 'FD');
                 pdf.setFontSize(14); setBoldFont();
-                pdf.text(t('pdf.dutiesAndTasksCont'), pageWidth/2, yPos + 7, { align: 'center' });
+                pdf.text(txt(t('pdf.dutiesAndTasksCont')), pageWidth/2, yPos + 7, { align: 'center' });
                 yPos += 10;
             }
         }
@@ -1013,15 +1016,15 @@ export async function exportToPDF() {
         if (kt || st || bt) {
             pdf.addPage('a4', 'landscape'); yPos = margin + 5;
             pdf.setFontSize(14); setBoldFont();
-            pdf.text(t('pdf.generalKnowledge'), pageWidth/2, yPos, { align: 'center' }); yPos += 10;
+            pdf.text(txt(t('pdf.generalKnowledge')), pageWidth/2, yPos, { align: 'center' }); yPos += 10;
             const tw = (pageWidth - (margin * 2)) / 3;
             let c1Y = yPos, c2Y = yPos, c3Y = yPos;
             const pdfSection = (text, heading, x, yRef) => {
                 pdf.setFontSize(13); setBoldFont();
-                pdf.text(heading, x, yRef); yRef += 8;
+                pdf.text(txt(heading), x, yRef); yRef += 8;
                 pdf.setFontSize(11); setBodyFont();
                 text.split('\n').filter(l => l.trim()).forEach(item => {
-                    pdf.text(item.trim().replace(/^[•\-*]\s*/, ''), x, yRef);
+                    pdf.text(txt(item.trim().replace(/^[•\-*]\s*/, '')), x, yRef);
                     yRef += lineH12;
                 });
                 return yRef;
@@ -1040,15 +1043,15 @@ export async function exportToPDF() {
             let lY = yPos, rY = yPos;
             if (tools.length) {
                 pdf.setFontSize(13); setBoldFont();
-                pdf.text(document.getElementById('toolsHeading').textContent, margin, lY); lY += 8;
+                pdf.text(txt(document.getElementById('toolsHeading').textContent), margin, lY); lY += 8;
                 pdf.setFontSize(11); setBodyFont();
-                tools.forEach(t => { pdf.text(t.trim().replace(/^[•\-*]\s*/, ''), margin, lY); lY += lineH12; });
+                tools.forEach(item => { pdf.text(txt(item.trim().replace(/^[•\-*]\s*/, '')), margin, lY); lY += lineH12; });
             }
             if (trends.length) {
                 pdf.setFontSize(13); setBoldFont();
-                pdf.text(document.getElementById('trendsHeading').textContent, margin + hw + 5, rY); rY += 8;
+                pdf.text(txt(document.getElementById('trendsHeading').textContent), margin + hw + 5, rY); rY += 8;
                 pdf.setFontSize(11); setBodyFont();
-                trends.forEach(t => { pdf.text(t.trim().replace(/^[•\-*]\s*/, ''), margin + hw + 5, rY); rY += lineH12; });
+                trends.forEach(item => { pdf.text(txt(item.trim().replace(/^[•\-*]\s*/, '')), margin + hw + 5, rY); rY += lineH12; });
             }
         }
 
@@ -1056,10 +1059,10 @@ export async function exportToPDF() {
         if (acronymsInput.value.trim()) {
             pdf.addPage('a4', 'landscape'); yPos = margin + 5;
             pdf.setFontSize(13); setBoldFont();
-            pdf.text(document.getElementById('acronymsHeading').textContent, margin, yPos); yPos += 8;
+            pdf.text(txt(document.getElementById('acronymsHeading').textContent), margin, yPos); yPos += 8;
             pdf.setFontSize(11); setBodyFont();
             acronymsInput.value.split('\n').filter(l => l.trim()).forEach(a => {
-                pdf.text(a.trim().replace(/^[•\-*]\s*/, ''), margin, yPos); yPos += lineH12;
+                pdf.text(txt(a.trim().replace(/^[•\-*]\s*/, '')), margin, yPos); yPos += lineH12;
             });
         }
 
@@ -1068,10 +1071,10 @@ export async function exportToPDF() {
         if (cpi && cpi.value.trim()) {
             pdf.addPage('a4', 'landscape'); yPos = margin + 5;
             pdf.setFontSize(13); setBoldFont();
-            pdf.text(document.getElementById('careerPathHeading').textContent, margin, yPos); yPos += 8;
+            pdf.text(txt(document.getElementById('careerPathHeading').textContent), margin, yPos); yPos += 8;
             pdf.setFontSize(11); setBodyFont();
             cpi.value.split('\n').filter(l => l.trim()).forEach(item => {
-                pdf.text(item.trim().replace(/^[•\-*]\s*/, ''), margin, yPos); yPos += lineH12;
+                pdf.text(txt(item.trim().replace(/^[•\-*]\s*/, '')), margin, yPos); yPos += lineH12;
             });
         }
 
@@ -1081,10 +1084,10 @@ export async function exportToPDF() {
             if (h && t && t.value.trim()) {
                 pdf.addPage('a4', 'landscape'); yPos = margin + 5;
                 pdf.setFontSize(13); setBoldFont();
-                pdf.text(h.textContent, margin, yPos); yPos += 8;
+                pdf.text(txt(h.textContent), margin, yPos); yPos += 8;
                 pdf.setFontSize(11); setBodyFont();
                 t.value.split('\n').filter(l => l.trim()).forEach(item => {
-                    pdf.text(item.trim().replace(/^[•\-*]\s*/, ''), margin, yPos); yPos += lineH12;
+                    pdf.text(txt(item.trim().replace(/^[•\-*]\s*/, '')), margin, yPos); yPos += lineH12;
                 });
             }
         });
@@ -1232,6 +1235,7 @@ export function getChartInfoData() {
         dacumDate:      document.getElementById('dacumDate')?.value      || '',
         producedFor:    document.getElementById('producedFor')?.value    || '',
         producedBy:     document.getElementById('producedBy')?.value     || '',
+        sector:         document.getElementById('sector')?.value         || '',
         occupationTitle:document.getElementById('occupationTitle')?.value|| '',
         jobTitle:       document.getElementById('jobTitle')?.value       || '',
         scopeOfWork:    document.getElementById('scopeOfWork')?.value    || '',
@@ -1262,6 +1266,7 @@ export function applyChartInfoData(info) {
     set('dacumDate',       info.dacumDate);
     set('producedFor',     info.producedFor);
     set('producedBy',      info.producedBy);
+    set('sector',          info.sector);
     set('occupationTitle', info.occupationTitle);
     set('jobTitle',        info.jobTitle);
     set('scopeOfWork',     info.scopeOfWork);
