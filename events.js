@@ -855,7 +855,7 @@ export async function exportToPDF() {
             .info-grid { display: flex; gap: 32px; margin-bottom: 20px; }
             .info-col  { flex: 1; }
             .info-row  { margin-bottom: 8px; }
-            .info-label { font-weight: bold; font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+            .info-label { font-weight: bold; font-size: 12px; color: #555; }
             .info-value { font-size: 14px; color: #1e3a5f; }
             .info-img   { max-height: 60px; max-width: 140px; object-fit: contain; display: block; margin: 4px 0; }
             .grid { display: flex; gap: 0; border: 2px solid #1e3a5f; border-radius: 6px; overflow: hidden; }
@@ -916,14 +916,14 @@ export async function exportToPDF() {
             let leftHTML = '';
             if (pFor) {
                 leftHTML += `<div class="info-row">
-                    <div class="info-label">${esc(t('pdf.producedFor'))}</div>`;
+                    <div class="info-label">${t('pdf.producedFor')}</div>`;
                 if (producedForImage)
                     leftHTML += `<img class="info-img" src="${producedForImage}">`;
                 leftHTML += `<div class="info-value">${pFor}</div></div>`;
             }
             if (pBy) {
                 leftHTML += `<div class="info-row">
-                    <div class="info-label">${esc(t('pdf.producedBy'))}</div>`;
+                    <div class="info-label">${t('pdf.producedBy')}</div>`;
                 if (producedByImage)
                     leftHTML += `<img class="info-img" src="${producedByImage}">`;
                 leftHTML += `<div class="info-value">${pBy}</div></div>`;
@@ -934,17 +934,17 @@ export async function exportToPDF() {
             let rightHTML = '';
             if (sec)
                 rightHTML += `<div class="info-row">
-                    <div class="info-label">${esc(t('pdf.sector'))}</div>
+                    <div class="info-label">${t('pdf.sector')}</div>
                     <div class="info-value">${sec}</div></div>`;
             rightHTML += `<div class="info-row">
-                <div class="info-label">${esc(t('pdf.occupationTitle'))}</div>
+                <div class="info-label">${t('pdf.occupationTitle')}</div>
                 <div class="info-value">${occ}</div></div>`;
             rightHTML += `<div class="info-row">
-                <div class="info-label">${esc(t('pdf.jobTitle'))}</div>
+                <div class="info-label">${t('pdf.jobTitle')}</div>
                 <div class="info-value">${job}</div></div>`;
 
             return `<div class="page">
-                <h1>${esc(t('pdf.chartTitle', { title: occupationTitleInput.value }))}</h1>
+                <h1>${t('pdf.chartTitle', { title: occupationTitleInput.value })}</h1>
                 <div class="info-grid">
                     <div class="info-col">${leftHTML}</div>
                     <div class="info-col">${rightHTML}</div>
@@ -977,8 +977,8 @@ export async function exportToPDF() {
                 gridHTML += '</div>';
 
                 const heading = i === 0
-                    ? esc(t('pdf.dutiesAndTasks'))
-                    : esc(t('pdf.dutiesAndTasksCont'));
+                    ? t('pdf.dutiesAndTasks')
+                    : t('pdf.dutiesAndTasksCont');
 
                 pages += `<div class="page"><h2>${heading}</h2>${gridHTML}</div>`;
             }
@@ -1016,7 +1016,7 @@ export async function exportToPDF() {
             });
 
             let html = `<div class="page">
-                <div class="section-title">${esc(t('word.additionalInfo'))}</div>
+                <div class="section-title">${t('word.additionalInfo')}</div>
                 <div class="section-grid">`;
 
             [col1, col2, col3].forEach(col => {
